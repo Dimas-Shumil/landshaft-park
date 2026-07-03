@@ -767,7 +767,7 @@ html {
     font-size: 15px;
   }
   .hero-benefits {
-    padding-top: 44px;
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {
