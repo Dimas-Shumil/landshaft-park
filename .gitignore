@@ -1,0 +1,42 @@
+# Зависимости
+node_modules/
+
+# Переменные окружения и секреты
+.env
+.env.*
+!.env.example
+
+# Локальная база Prisma / SQLite
+prisma/dev.db
+prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# Загружаемые через админку изображения
+uploads/*
+!uploads/.gitkeep
+
+# Логи
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Кэш и временные файлы
+.cache/
+.tmp/
+temp/
+tmp/
+*.tmp
+*.temp
+
+# Системные файлы и IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Отчёты
+coverage/
