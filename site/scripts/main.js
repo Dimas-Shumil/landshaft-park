@@ -76,8 +76,8 @@ function initHero() {
 
 function initSectionAnimations() {
   const sections = document.querySelectorAll(
-  '.categories, .products, .desicion',
-);
+    '.categories, .products, .desicion, .advantages, .production, .calculate',
+  );
 
   if (!sections.length) return;
 
