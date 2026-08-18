@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="/site/css/catalog.min.css" />
+
+    <title>Каталог | Ландшафт Парк</title>
+  </head>
+
+  <body>
+    <div data-include="/components/header.html"></div>
+
+    <main class="catalog-page">
+      <div class="catalog-container">
+        <nav class="catalog-breadcrumbs" aria-label="Хлебные крошки">
+          <a href="/">Главная</a>
+          <span aria-hidden="true">›</span>
+          <span>Каталог</span>
+        </nav>
+
+        <div class="catalog-heading">
+          <h1>Каталог</h1>
+        </div>
+
+        <div class="catalog-categories" aria-label="Категории каталога">
+          <button
+            class="catalog-categories__button is-active"
+            type="button"
+            data-category-tab="Тротуарная плитка"
+          >
+            Тротуарная плитка
+          </button>
+
+          <button
+            class="catalog-categories__button"
+            type="button"
+            data-category-tab="Бордюры"
+          >
+            Бордюры
+          </button>
+
+          <button
+            class="catalog-categories__button"
+            type="button"
+            data-category-tab="Водостоки"
+          >
+            Водостоки
+          </button>
+
+          <button
+            class="catalog-categories__button"
+            type="button"
+            data-category-tab="Ступени"
+          >
+            Ступени
+          </button>
+
+          <button
+            class="catalog-categories__button"
+            type="button"
+            data-category-tab="Элементы благоустройства"
+          >
+            Элементы благоустройства
+          </button>
+        </div>
+
+        <div class="catalog-toolbar">
+          <button
+            class="catalog-filter-toggle"
+            type="button"
+            aria-controls="catalog-filters"
+            aria-expanded="false"
+            data-filter-open
+          >
+            <span class="catalog-filter-toggle__icon" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+
+            Фильтры
+          </button>
+
+          <p class="catalog-results" aria-live="polite">
+            Найдено:
+            <strong data-results-count>0</strong>
+          </p>
+
+          <label class="catalog-sort">
+            <span>Сортировка</span>
+
+            <select data-sort>
+              <option value="popular">По популярности</option>
+              <option value="price-asc">Сначала дешевле</option>
+              <option value="price-desc">Сначала дороже</option>
+              <option value="name">По названию</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="catalog-layout">
+          <div class="catalog-filter-overlay" data-filter-overlay></div>
+
+          <aside
+            class="catalog-sidebar"
+            id="catalog-filters"
+            aria-label="Фильтры каталога"
+            data-filter-panel
+          >
+            <div class="catalog-sidebar__mobile-head">
+              <strong>Фильтры</strong>
+
+              <button
+                type="button"
+                class="catalog-sidebar__close"
+                aria-label="Закрыть фильтры"
+                data-filter-close
+              >
+                ×
+              </button>
+            </div>
+
+            <form class="catalog-filters" data-filters>
+              <details class="catalog-filter" open>
+                <summary>Категория</summary>
+
+                <div class="catalog-filter__content">
+                  <label class="catalog-check">
+                    <input
+                      type="radio"
+                      name="category"
+                      value="Тротуарная плитка"
+                      checked
+                    />
+                    <span>Тротуарная плитка</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input type="radio" name="category" value="Бордюры" />
+                    <span>Бордюры</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input type="radio" name="category" value="Водостоки" />
+                    <span>Водостоки</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input type="radio" name="category" value="Ступени" />
+                    <span>Ступени</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input
+                      type="radio"
+                      name="category"
+                      value="Элементы благоустройства"
+                    />
+                    <span>Элементы благоустройства</span>
+                  </label>
+                </div>
+              </details>
+
+              <details class="catalog-filter" open>
+                <summary>Цвет</summary>
+
+                <div class="catalog-filter__content">
+                  <div class="catalog-colors">
+                    <label
+                      class="catalog-color"
+                      title="Серый"
+                      aria-label="Серый"
+                    >
+                      <input type="checkbox" name="color" value="Серый" />
+                      <span style="--swatch: #aaa9a3"></span>
+                    </label>
+
+                    <label
+                      class="catalog-color"
+                      title="Графит"
+                      aria-label="Графит"
+                    >
+                      <input type="checkbox" name="color" value="Графит" />
+                      <span style="--swatch: #555a55"></span>
+                    </label>
+
+                    <label
+                      class="catalog-color"
+                      title="Коричневый"
+                      aria-label="Коричневый"
+                    >
+                      <input type="checkbox" name="color" value="Коричневый" />
+                      <span style="--swatch: #735444"></span>
+                    </label>
+                  </div>
+
+                  <p class="catalog-filter__hint">
+                    Показываем только подтверждённые цвета из текущих товаров.
+                  </p>
+                </div>
+              </details>
+
+              <details class="catalog-filter" open>
+                <summary>Толщина, мм</summary>
+
+                <div class="catalog-filter__content">
+                  <label class="catalog-check">
+                    <input type="checkbox" name="thickness" value="40" />
+                    <span>40</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input type="checkbox" name="thickness" value="60" />
+                    <span>60</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input type="checkbox" name="thickness" value="80" />
+                    <span>80</span>
+                  </label>
+
+                  <label class="catalog-check">
+                    <input type="checkbox" name="thickness" value="100" />
+                    <span>100</span>
+                  </label>
+                </div>
+              </details>
+
+              <details class="catalog-filter" open>
+                <summary>Цена, ₽/м²</summary>
+
+                <div class="catalog-filter__content">
+                  <div class="catalog-price__inputs">
+                    <label>
+                      <span>от</span>
+                      <input
+                        type="number"
+                        min="500"
+                        max="2500"
+                        step="10"
+                        value="500"
+                        data-price-min
+                      />
+                    </label>
+
+                    <label>
+                      <span>до</span>
+                      <input
+                        type="number"
+                        min="500"
+                        max="2500"
+                        step="10"
+                        value="2500"
+                        data-price-max
+                      />
+                    </label>
+                  </div>
+
+                  <div class="catalog-range">
+                    <input
+                      type="range"
+                      min="500"
+                      max="2500"
+                      step="10"
+                      value="500"
+                      aria-label="Минимальная цена"
+                      data-range-min
+                    />
+
+                    <input
+                      type="range"
+                      min="500"
+                      max="2500"
+                      step="10"
+                      value="2500"
+                      aria-label="Максимальная цена"
+                      data-range-max
+                    />
+                  </div>
+
+                  <div class="catalog-price__scale">
+                    <span>500</span>
+                    <span>2500</span>
+                  </div>
+                </div>
+              </details>
+
+              <button class="catalog-filters__apply" type="button" data-filter-apply>
+                Показать <span data-filter-count>0</span> товаров
+              </button>
+
+              <button class="catalog-filters__reset" type="reset">
+                Сбросить фильтры
+              </button>
+            </form>
+          </aside>
+
+          <section class="catalog-products" aria-label="Товары">
+            <div class="catalog-grid" data-products-grid></div>
+
+            <div class="catalog-empty" data-empty hidden>
+              <h2>В этой категории пока нет товаров</h2>
+              <p>
+                Интерфейс категории уже готов. Товары появятся здесь после
+                подключения актуального каталога к базе данных.
+              </p>
+
+              <button type="button" data-empty-reset>
+                Вернуться к тротуарной плитке
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <div data-include="/components/footer.html"></div>
+
+    <script src="/site/scripts/main.js"></script>
+    <script src="/site/scripts/catalog.js"></script>
+  </body>
+</html>

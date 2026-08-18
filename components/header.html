@@ -1,51 +1,69 @@
- <header class="header">
-      <div class="header__container">
-        <a href="#" class="header__logo">Ландшафт Парк</a>
+<header class="header">
+  <div class="header__container">
+    <a href="/" class="header__logo"> Ландшафт Парк </a>
 
-        <nav class="header__nav">
-          <a href="#catalog">Каталог</a>
-          <a href="#products">Товары</a>
-          <a href="#production">Производство</a>
-          <a href="#delivery">Доставка</a>
-          <a href="#contacts">Контакты</a>
-        </nav>
+    <nav class="header__nav" aria-label="Основная навигация">
+      <a href="/">Главная</a>
+      <a href="/catalog">Каталог</a>
+      <a href="/#production">Производство</a>
+      <a href="/#delivery">Доставка</a>
+      <a href="/#contacts">Контакты</a>
+    </nav>
 
-        <div class="header__actions">
-          <a href="tel:+79610938663" class="header__phone">+7 961-093-86-63</a>
-          <a href="#calculate" class="header__button">Рассчитать</a>
-        </div>
+    <div class="header__right">
+      <a href="/cart" class="header__cart" aria-label="Перейти в корзину">
+        <img
+          src="/site/images/cart-green.png"
+          alt=""
+          class="header__cart-icon"
+        />
 
-        <button
-          class="header__burger"
-          type="button"
-          aria-label="Открыть меню"
-          aria-expanded="false"
+        <span
+          class="header__cart-count"
+          data-cart-count
+          aria-label="Товаров в корзине"
         >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+          0
+        </span>
+      </a>
+
+      <div class="header__actions">
+        <a href="tel:+79610938663" class="header__phone"> +7 961-093-86-63 </a>
+
+        <a href="/#calculate" class="header__button"> Рассчитать </a>
       </div>
 
-      <div class="mobile-menu">
-        <div class="mobile-menu__inner">
-          <nav class="mobile-menu__nav">
-            <a href="#catalog">Каталог</a>
-            <a href="#products">Товары</a>
-            <a href="#production">Производство</a>
-            <a href="#delivery">Доставка</a>
-            <a href="#contacts">Контакты</a>
-          </nav>
+      <button
+        class="header__burger"
+        type="button"
+        aria-label="Открыть меню"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+      >
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </div>
 
-          <div class="mobile-menu__bottom">
-            <a href="tel:+79610938663" class="mobile-menu__phone">
-              +7 961-093-86-63
-            </a>
+  <div class="mobile-menu" id="mobile-menu">
+    <div class="mobile-menu__inner">
+      <nav class="mobile-menu__nav" aria-label="Мобильная навигация">
+        <a href="/">Главная</a>
+        <a href="/catalog">Каталог</a>
+        <a href="/#production">Производство</a>
+        <a href="/#delivery">Доставка</a>
+        <a href="/#contacts">Контакты</a>
+      </nav>
 
-            <a href="#calculate" class="mobile-menu__button">
-              Рассчитать объём
-            </a>
-          </div>
-        </div>
+      <div class="mobile-menu__bottom">
+        <a href="tel:+79610938663" class="mobile-menu__phone">
+          +7 961-093-86-63
+        </a>
+
+        <a href="/#calculate" class="mobile-menu__button"> Рассчитать объём </a>
       </div>
-    </header>
+    </div>
+  </div>
+</header>

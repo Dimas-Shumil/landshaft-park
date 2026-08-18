@@ -1,0 +1,28 @@
+{
+  "name": "landshaft-park",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Сайт-каталог Ландшафт Парк",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "check": "node --check server.js && node --check routes/public.routes.js && node --check middleware/error-handler.js && node --check site/scripts/main.js",
+    "css": "sass site/styles/main.scss site/css/main.css --style=expanded --no-source-map && sass site/styles/main.scss site/css/main.min.css --style=compressed --no-source-map"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.6.1",
+    "helmet": "^8.3.0",
+    "nodemailer": "^9.0.5",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "sass": "^1.102.0"
+  }
+}

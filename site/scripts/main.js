@@ -42,6 +42,10 @@ function initHeader() {
   burger.addEventListener('click', () => {
     const isActive = header.classList.toggle('is-active');
 
+    if (isActive) {
+      header.classList.remove('is-hidden');
+    }
+
     document.body.classList.toggle('lock', isActive);
     burger.setAttribute('aria-expanded', String(isActive));
   });
@@ -56,12 +60,39 @@ function initHeader() {
     }
   });
 
-  const handleHeaderScroll = () => {
-    header.classList.toggle('is-scrolled', window.scrollY > 12);
+  let lastScrollY = Math.max(window.scrollY, 0);
+  let scrollTicking = false;
+
+  const updateHeaderOnScroll = () => {
+    const currentScrollY = Math.max(window.scrollY, 0);
+    const scrollDelta = currentScrollY - lastScrollY;
+
+    header.classList.toggle('is-scrolled', currentScrollY > 12);
+
+    if (header.classList.contains('is-active') || currentScrollY <= 12) {
+      header.classList.remove('is-hidden');
+      lastScrollY = currentScrollY;
+      scrollTicking = false;
+      return;
+    }
+
+    if (Math.abs(scrollDelta) >= 6) {
+      header.classList.toggle('is-hidden', scrollDelta > 0);
+      lastScrollY = currentScrollY;
+    }
+
+    scrollTicking = false;
   };
 
-  handleHeaderScroll();
-  window.addEventListener('scroll', handleHeaderScroll);
+  const handleHeaderScroll = () => {
+    if (scrollTicking) return;
+
+    scrollTicking = true;
+    requestAnimationFrame(updateHeaderOnScroll);
+  };
+
+  updateHeaderOnScroll();
+  window.addEventListener('scroll', handleHeaderScroll, { passive: true });
 }
 
 function initHero() {
@@ -109,16 +140,246 @@ function initFloatingCall() {
   };
 
   handleFloatingCall();
-  window.addEventListener('scroll', handleFloatingCall);
+  window.addEventListener('scroll', handleFloatingCall, { passive: true });
+}
+
+// корзина
+
+const CART_STORAGE_KEY = 'landshaftParkCart';
+
+function getGlobalCart() {
+  try {
+    const rawCart = localStorage.getItem(CART_STORAGE_KEY);
+
+    if (!rawCart) {
+      return [];
+    }
+
+    const cart = JSON.parse(rawCart);
+
+    return Array.isArray(cart) ? cart : [];
+  } catch {
+    return [];
+  }
+}
+
+function updateGlobalCartCount() {
+  const total = getGlobalCart().reduce((sum, item) => {
+    const quantity = Math.max(1, Number(item.quantity) || 1);
+
+    return sum + quantity;
+  }, 0);
+
+  document.querySelectorAll('[data-cart-count]').forEach((counter) => {
+    counter.textContent = String(total);
+    counter.hidden = total === 0;
+  });
+}
+
+function initGlobalCartCounter() {
+  updateGlobalCartCount();
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === CART_STORAGE_KEY) {
+      updateGlobalCartCount();
+    }
+  });
+
+  window.addEventListener('cart:updated', updateGlobalCartCount);
+}
+
+// отправка формы
+
+function initCalculateForm() {
+  const form = document.querySelector('[data-calculate-form]');
+
+  if (!form) return;
+
+  const submitButton = form.querySelector('.calculate-form__button');
+
+  if (!submitButton) return;
+
+  let formStartedAt = Date.now();
+  let formToken = '';
+  let isSubmitting = false;
+
+  const honeypot = document.createElement('input');
+  honeypot.type = 'text';
+  honeypot.name = 'company';
+  honeypot.autocomplete = 'off';
+  honeypot.tabIndex = -1;
+  honeypot.hidden = true;
+  honeypot.setAttribute('aria-hidden', 'true');
+  form.appendChild(honeypot);
+
+  let status = form.querySelector('[data-calculate-status]');
+
+  if (!status) {
+    status = document.createElement('p');
+    status.className = 'calculate-form__status';
+    status.dataset.calculateStatus = '';
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    status.hidden = true;
+
+    submitButton.insertAdjacentElement('afterend', status);
+  }
+
+  const setStatus = (message, type = '') => {
+    status.textContent = message;
+    status.hidden = !message;
+
+    status.classList.remove('is-success', 'is-error');
+
+    if (type) {
+      status.classList.add(`is-${type}`);
+    }
+  };
+
+  const loadFormChallenge = async () => {
+    const response = await fetch('/api/requests/calculate/challenge', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.formToken) {
+      throw new Error('Не удалось подготовить форму. Обновите страницу.');
+    }
+
+    formToken = String(data.formToken);
+    formStartedAt = Date.now();
+  };
+
+  loadFormChallenge().catch((error) => {
+    console.error('Не удалось получить токен формы:', error);
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    setStatus('');
+
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+
+    if (!formToken) {
+      setStatus(
+        'Форма ещё загружается. Подождите пару секунд и попробуйте снова.',
+        'error',
+      );
+      return;
+    }
+
+    const formData = new FormData(form);
+    const areaValue = String(formData.get('area') || '').trim();
+    const purposeValue = String(formData.get('purpose') || '').trim();
+
+    const payload = {
+      name: String(formData.get('name') || '').trim(),
+      phone: String(formData.get('phone') || '').trim(),
+      area: areaValue ? Number(areaValue) : null,
+      purpose: purposeValue || null,
+      comment: String(formData.get('comment') || '').trim(),
+      delivery: formData.get('delivery') === 'on',
+      personalDataConsent:
+        formData.get('personalDataConsent') === 'on',
+
+      company: String(formData.get('company') || '').trim(),
+      formToken,
+      formElapsedMs: Date.now() - formStartedAt,
+    };
+
+    const originalButtonText = submitButton.textContent.trim();
+
+    isSubmitting = true;
+    submitButton.disabled = true;
+    submitButton.textContent = 'Отправляем...';
+
+    try {
+      const response = await fetch('/api/requests/calculate', {
+        method: 'POST',
+
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+
+        body: JSON.stringify(payload),
+      });
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data.message || 'Не удалось отправить заявку. Попробуйте ещё раз.',
+        );
+      }
+
+      form.reset();
+      honeypot.value = '';
+      formToken = '';
+
+      loadFormChallenge().catch((error) => {
+        console.error('Не удалось обновить токен формы:', error);
+      });
+
+      submitButton.textContent = 'Заявка отправлена';
+
+      setStatus(
+        'Спасибо! Заявка отправлена. Мы свяжемся с вами для уточнения расчёта.',
+        'success',
+      );
+
+      window.setTimeout(() => {
+        submitButton.textContent = originalButtonText;
+      }, 1800);
+    } catch (error) {
+      submitButton.textContent = originalButtonText;
+      formToken = '';
+
+      loadFormChallenge().catch((challengeError) => {
+        console.error('Не удалось обновить токен формы:', challengeError);
+      });
+
+      setStatus(
+        error instanceof Error
+          ? error.message
+          : 'Не удалось отправить заявку. Попробуйте ещё раз.',
+        'error',
+      );
+    } finally {
+      isSubmitting = false;
+      submitButton.disabled = false;
+    }
+  });
 }
 
 async function initApp() {
   await loadComponents();
 
   initHeader();
+  initGlobalCartCounter();
   initHero();
   initSectionAnimations();
   initFloatingCall();
+  initCalculateForm();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

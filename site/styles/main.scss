@@ -689,7 +689,7 @@
 
 @media (max-width: 760px) {
   .categories {
-    padding: 56px 0 34px;
+    padding: 32px 0;
   }
 
   .categories-container {
@@ -1058,7 +1058,7 @@
 
 @media (max-width: 760px) {
   .products {
-    padding: 56px 0 34px;
+    padding: 32px 0;
   }
 
   .products-container {
@@ -1390,7 +1390,7 @@
 
 @media (max-width: 760px) {
   .desicion {
-    padding: 56px 0;
+    padding: 32px 0;
   }
 
   .desicion-container {
@@ -1481,15 +1481,16 @@
   }
 }
 
-// adventages
+// advantages
+
 .advantages {
   padding: 82px 0;
   background: #fbfaf6;
 
   &-container {
-    margin: 0 auto;
     width: 100%;
     max-width: 1720px;
+    margin: 0 auto;
     padding: 0 80px;
   }
 
@@ -1497,8 +1498,12 @@
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 32px;
+
+    padding: 32px;
+
     border: 1px solid rgba($color-primary-dark, 0.08);
     border-radius: 12px;
+
     background: rgba(#ffffff, 0.5);
   }
 
@@ -1508,6 +1513,15 @@
     gap: 16px;
 
     min-width: 0;
+
+    opacity: 0;
+    transform: translateY(24px);
+
+    transition:
+      opacity 0.7s ease,
+      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+
+    will-change: opacity, transform;
   }
 
   .advantages-card__icon {
@@ -1524,6 +1538,7 @@
 
       width: 100%;
       height: 100%;
+
       object-fit: contain;
     }
   }
@@ -1550,17 +1565,6 @@
 
       color: $color-text-soft;
     }
-  }
-
-  .advantages-card {
-    opacity: 0;
-    transform: translateY(24px);
-
-    transition:
-      opacity 0.7s ease,
-      transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-
-    will-change: opacity, transform;
   }
 
   &.is-visible {
@@ -1591,11 +1595,129 @@
   }
 }
 
+// adaptive
+
+@media (max-width: 1400px) {
+  .advantages {
+    &-container {
+      padding: 0 44px;
+    }
+
+    &-card__inner {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 28px 36px;
+
+      padding: 30px;
+    }
+  }
+}
+
+@media (max-width: 1000px) {
+  .advantages {
+    &-card__inner {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 28px;
+
+      padding: 28px;
+    }
+
+    .advantages-card {
+      align-items: flex-start;
+    }
+  }
+}
+
+@media (max-width: 760px) {
+  .advantages {
+    padding: 32px 0;
+
+    &-container {
+      padding: 0 24px;
+    }
+
+    &-card__inner {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 26px 20px;
+
+      padding: 24px;
+
+      border-radius: 10px;
+    }
+
+    .advantages-card {
+      gap: 14px;
+    }
+
+    .advantages-card__icon {
+      flex-basis: 46px;
+      width: 46px;
+      height: 46px;
+    }
+
+    .advantages-card__text {
+      h4 {
+        margin-bottom: 6px;
+
+        font-size: 16px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+@media (max-width: 560px) {
+  .advantages {
+    &-container {
+      padding: 0 18px;
+    }
+
+    &-card__inner {
+      grid-template-columns: 1fr;
+      gap: 0;
+
+      padding: 8px 20px;
+    }
+
+    .advantages-card {
+      align-items: center;
+      gap: 16px;
+
+      padding: 20px 0;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid rgba($color-primary-dark, 0.08);
+      }
+    }
+
+    .advantages-card__icon {
+      flex-basis: 48px;
+      width: 48px;
+      height: 48px;
+    }
+
+    .advantages-card__text {
+      h4 {
+        font-size: 16px;
+      }
+
+      p {
+        font-size: 14px;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .advantages-card {
-    opacity: 1;
-    transform: none;
-    transition: none;
+  .advantages {
+    .advantages-card {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
   }
 }
 
@@ -1812,7 +1934,7 @@
 
 @media (max-width: 760px) {
   .production {
-    padding: 56px 0;
+    padding: 32px 0;
   }
 
   .production-container {
@@ -2206,6 +2328,27 @@
   }
 }
 
+.calculate-form__status {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+
+  &.is-success {
+    color: $color-primary-dark;
+    background: rgba($color-primary, 0.08);
+  }
+
+  &.is-error {
+    color: #9f2f29;
+    background: rgba(#b33a32, 0.08);
+  }
+}
+
 .calculate__visual {
   display: flex;
   align-items: flex-end;
@@ -2301,7 +2444,7 @@
 
 @media (max-width: 760px) {
   .calculate {
-    padding: 56px 0;
+    padding: 32px 0;
   }
 
   .calculate-container {
