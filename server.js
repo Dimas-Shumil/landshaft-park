@@ -12,6 +12,9 @@ const { z } = require('zod');
 const prisma = require('./lib/prisma');
 
 const publicRouter = require('./routes/public.routes');
+const adminRouter = require('./routes/admin.routes');
+const authRouter = require('./routes/auth.routes');
+const adminApiRouter = require('./routes/admin-api.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
 
 const app = express();
@@ -1132,6 +1135,15 @@ app.use(
 );
 app.use('/components', express.static(path.join(__dirname, 'components')));
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+
+// admin auth api
+
+app.use('/api/admin/auth', authRouter);
+app.use('/api/admin', adminApiRouter);
+
+// admin pages
+
+app.use('/admin', adminRouter);
 
 // public api
 

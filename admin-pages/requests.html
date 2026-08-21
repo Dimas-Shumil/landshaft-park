@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+
+    <link rel="stylesheet" href="/site/css/admin.min.css" />
+
+    <title>Заявки + Заказы | Ландшафт Парк</title>
+  </head>
+
+  <body class="admin-page">
+    <div class="admin-layout">
+      <div class="admin-sidebar-overlay" data-sidebar-overlay></div>
+
+      <aside class="admin-sidebar" data-admin-sidebar>
+        <div class="admin-sidebar__top">
+          <a class="admin-brand admin-brand--sidebar" href="/admin" aria-label="Dashboard">
+            <svg class="admin-brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M32 5 50 23 46.5 26.5 32 12 17.5 26.5 14 23 32 5Z" />
+              <path d="m32 21 14 14-3.5 3.5L32 28 21.5 38.5 18 35l14-14Z" />
+              <path d="m32 31 11 11-3.5 3.5L32 38l-7.5 7.5L21 42l11-11Z" />
+              <path d="M29.5 17h5v35h-5z" />
+            </svg>
+            <span class="admin-brand__copy">
+              <strong>Ландшафт Парк</strong>
+              <span>Админ-панель</span>
+            </span>
+          </a>
+
+          <button class="admin-sidebar__close" type="button" aria-label="Закрыть меню" data-sidebar-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="admin-nav" aria-label="Навигация админ-панели">
+          <a class="admin-nav__item" href="/admin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+
+          <a class="admin-nav__item is-active" href="/admin/requests" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+              <path d="M14 3v5h5M9 12h6M9 16h6" />
+            </svg>
+            <span>Заявки + Заказы</span>
+            <i aria-hidden="true"></i>
+          </a>
+
+          <button class="admin-nav__item" type="button" data-coming-soon>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+              <path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9" />
+            </svg>
+            <span>Каталог</span>
+          </button>
+        </nav>
+
+        <div class="admin-sidebar__decoration" aria-hidden="true"></div>
+
+        <button class="admin-sidebar__logout" type="button" data-admin-logout>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" />
+            <path d="m14 8 4 4-4 4M18 12H8" />
+          </svg>
+          <span>Выйти</span>
+        </button>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <button class="admin-menu-button" type="button" aria-label="Открыть меню" data-sidebar-open>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+
+          <div class="admin-topbar__title">
+            <h1>Заявки + Заказы</h1>
+            <p>Работа с обращениями клиентов</p>
+          </div>
+
+          <div class="admin-profile">
+            <span class="admin-profile__avatar" data-admin-avatar>А</span>
+            <span class="admin-profile__copy">
+              <strong data-admin-name>Администратор</strong>
+              <small>Управление магазином</small>
+            </span>
+          </div>
+        </header>
+
+        <div class="admin-content admin-content--requests">
+          <section class="admin-requests-head">
+            <div>
+              <span class="admin-kicker">Обращения</span>
+              <h2>Входящие заявки и заказы</h2>
+              <p>Открывайте обращение, проверяйте позиции и фиксируйте результат работы менеджера.</p>
+            </div>
+
+            <button class="admin-refresh-button" type="button" data-requests-refresh>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 6v5h-5M4 18v-5h5" />
+                <path d="M6.1 9A7 7 0 0 1 18 6l2 5M4 13l2 5a7 7 0 0 0 11.9-3" />
+              </svg>
+              Обновить
+            </button>
+          </section>
+
+          <section class="admin-panel admin-requests-panel">
+            <div class="admin-request-tabs" role="tablist" aria-label="Тип обращения">
+              <button class="admin-request-tab is-active" type="button" data-request-type="ALL">
+                Все <span data-count-all>—</span>
+              </button>
+              <button class="admin-request-tab" type="button" data-request-type="ORDER">
+                Заказы <span data-count-orders>—</span>
+              </button>
+              <button class="admin-request-tab" type="button" data-request-type="CALCULATE_REQUEST">
+                Заявки на расчёт <span data-count-calculate>—</span>
+              </button>
+            </div>
+
+            <div class="admin-request-filters">
+              <label class="admin-request-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Номер, клиент или телефон"
+                  autocomplete="off"
+                  data-request-search
+                />
+              </label>
+
+              <label class="admin-request-select">
+                <span>Статус</span>
+                <select data-request-status>
+                  <option value="">Все статусы</option>
+                  <option value="NEW">Новые</option>
+                  <option value="IN_PROGRESS">В работе</option>
+                  <option value="CONFIRMED">Подтверждённые</option>
+                  <option value="COMPLETED">Завершённые</option>
+                  <option value="CANCELLED">Отменённые</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="admin-requests-table-wrap">
+              <table class="admin-table admin-requests-table" aria-label="Заявки и заказы">
+                <thead>
+                  <tr>
+                    <th>№</th>
+                    <th>Дата</th>
+                    <th>Клиент</th>
+                    <th>Тип</th>
+                    <th>Статус</th>
+                    <th>Сумма / Площадь</th>
+                    <th>Телефон</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody data-requests-body></tbody>
+              </table>
+
+              <div class="admin-requests-loading" data-requests-loading>
+                <span></span>
+                Загружаем обращения…
+              </div>
+
+              <div class="admin-empty admin-requests-empty" data-requests-empty hidden>
+                <span class="admin-empty__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+                    <path d="M14 3v5h5M9 13h6M9 17h4" />
+                  </svg>
+                </span>
+                <strong>Ничего не найдено</strong>
+                <p>Попробуйте изменить фильтр или поисковый запрос.</p>
+              </div>
+            </div>
+
+            <div class="admin-pagination">
+              <span data-pagination-info>—</span>
+              <div>
+                <button type="button" data-page-prev>Назад</button>
+                <button type="button" data-page-next>Вперёд</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="admin-footer">
+          <span aria-hidden="true"></span>
+          © Ландшафт Парк
+          <span aria-hidden="true"></span>
+        </footer>
+      </main>
+    </div>
+
+    <div class="admin-detail-overlay" data-detail-overlay></div>
+
+    <aside class="admin-detail" data-detail-panel aria-hidden="true">
+      <div class="admin-detail__head">
+        <div>
+          <span class="admin-kicker" data-detail-kicker>Обращение</span>
+          <h2 data-detail-number>—</h2>
+          <p data-detail-date>—</p>
+        </div>
+        <button type="button" class="admin-detail__close" aria-label="Закрыть" data-detail-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="admin-detail__body" data-detail-body>
+        <div class="admin-detail-loading" data-detail-loading>
+          <span></span>
+          Загружаем обращение…
+        </div>
+      </div>
+
+      <div class="admin-detail__footer" data-detail-footer hidden>
+        <button type="button" class="admin-detail__cancel" data-detail-close-secondary>Закрыть</button>
+        <button type="button" class="admin-detail__save" data-detail-save>
+          <span>Сохранить изменения</span>
+          <i></i>
+        </button>
+      </div>
+    </aside>
+
+    <div class="admin-toast" data-admin-toast role="status" aria-live="polite"></div>
+
+    <script src="/site/scripts/admin/requests.js" defer></script>
+  </body>
+</html>
