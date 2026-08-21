@@ -6,15 +6,17 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "node --watch server.js",
-    "start": "node server.js",
-    "check": "node --check server.js && node --check routes/public.routes.js && node --check middleware/error-handler.js && node --check site/scripts/main.js",
-    "css": "sass site/styles/main.scss site/css/main.css --style=expanded --no-source-map && sass site/styles/main.scss site/css/main.min.css --style=compressed --no-source-map"
-  },
+  "dev": "node --watch server.js",
+  "start": "node server.js",
+  "seed": "node prisma/seed.js",
+  "check": "node --check server.js && node --check routes/public.routes.js && node --check middleware/error-handler.js && node --check lib/prisma.js && node --check prisma/seed.js && node --check site/scripts/main.js && node --check site/scripts/catalog.js && node --check site/scripts/product.js",
+  "css": "sass site/styles/main.scss site/css/main.css --style=expanded --no-source-map && sass site/styles/main.scss site/css/main.min.css --style=compressed --no-source-map && sass site/styles/catalog.scss site/css/catalog.css --style=expanded --no-source-map && sass site/styles/catalog.scss site/css/catalog.min.css --style=compressed --no-source-map && sass site/styles/product.scss site/css/product.css --style=expanded --no-source-map && sass site/styles/product.scss site/css/product.min.css --style=compressed --no-source-map"
+},
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
+    "@prisma/client": "6.19.3",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.6.1",
@@ -23,6 +25,10 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "prisma": "6.19.3",
     "sass": "^1.102.0"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.1"
   }
 }

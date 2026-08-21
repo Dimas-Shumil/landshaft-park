@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="Товар каталога Ландшафт Парк"
+      data-product-description
+    />
+
+    <link rel="stylesheet" href="/site/css/product.min.css" />
+
+    <title>Товар | Ландшафт Парк</title>
+  </head>
+
+  <body>
+    <div data-include="/components/header.html"></div>
+
+    <main class="product-page">
+      <div class="product-page__container">
+        <nav class="product-breadcrumbs" aria-label="Хлебные крошки">
+          <a href="/">Главная</a>
+
+          <span aria-hidden="true">›</span>
+
+          <a href="/catalog">Каталог</a>
+
+          <span aria-hidden="true">›</span>
+
+          <span data-product-breadcrumb> Товар </span>
+        </nav>
+
+        <div class="product-view" data-product-view hidden>
+          <section class="product-gallery">
+            <div class="product-gallery__stage">
+              <div class="product-gallery__main" data-product-main-image></div>
+
+              <button
+                class="product-gallery__arrow product-gallery__arrow--prev"
+                type="button"
+                aria-label="Предыдущее изображение"
+                data-gallery-prev
+                hidden
+              >
+                ‹
+              </button>
+
+              <button
+                class="product-gallery__arrow product-gallery__arrow--next"
+                type="button"
+                aria-label="Следующее изображение"
+                data-gallery-next
+                hidden
+              >
+                ›
+              </button>
+            </div>
+
+            <div
+              class="product-gallery__thumbs"
+              data-product-thumbnails
+              aria-label="Изображения товара"
+            ></div>
+          </section>
+
+          <section class="product-info">
+            <p class="product-info__category" data-product-category></p>
+
+            <h1 data-product-title></h1>
+
+            <p
+              class="product-info__description"
+              data-product-short-description
+              hidden
+            ></p>
+
+            <div class="product-info__price">
+              <strong data-product-price></strong>
+
+              <span data-product-unit></span>
+            </div>
+
+            <div class="product-info__variants" data-product-variants></div>
+
+            <dl class="product-characteristics">
+              <div class="product-characteristics__row" data-product-size-row>
+                <dt>Размер</dt>
+                <dd data-product-size></dd>
+              </div>
+
+              <div
+                class="product-characteristics__row"
+                data-product-thickness-row
+              >
+                <dt>Толщина</dt>
+                <dd data-product-thickness></dd>
+              </div>
+
+              <div class="product-characteristics__row" data-product-color-row>
+                <dt>Цвет</dt>
+                <dd data-product-color></dd>
+              </div>
+
+              <div
+                class="product-characteristics__row"
+                data-product-purpose-row
+              >
+                <dt>Назначение</dt>
+                <dd data-product-purpose></dd>
+              </div>
+            </dl>
+
+            <div class="product-area">
+              <label class="product-area__label" for="product-area">
+                Площадь, м²
+                <span>— необязательно</span>
+              </label>
+
+              <input
+                class="product-area__input"
+                id="product-area"
+                type="number"
+                min="0.1"
+                step="0.1"
+                inputmode="decimal"
+                placeholder="Например, 50"
+                data-product-area
+              />
+
+              <p class="product-area__hint">
+                Если укажете площадь, менеджер поможет рассчитать необходимый
+                объём.
+              </p>
+            </div>
+
+            <button class="product-info__cart" type="button" data-product-add>
+              В корзину
+            </button>
+
+            <p class="product-info__note">
+              Наличие, точное количество, доставка и итоговая стоимость
+              подтверждаются менеджером.
+            </p>
+          </section>
+        </div>
+
+        <section
+          class="product-description"
+          data-product-description-section
+          hidden
+        >
+          <h2>О товаре</h2>
+
+          <div data-product-full-description></div>
+        </section>
+
+        <section class="product-related" data-related-products hidden>
+          <div class="product-related__top">
+            <h2>Похожие товары</h2>
+
+            <a href="/catalog" class="product-related__catalog-link">
+              Смотреть весь каталог
+              <span>→</span>
+            </a>
+          </div>
+
+          <!-- состояние 1: подборка загружается -->
+          <div class="product-related__state" data-related-loading>
+            <p>Подбираем похожие товары...</p>
+          </div>
+
+          <!-- состояние 2: ничего не найдено -->
+          <div
+            class="product-related__state product-related__state--empty"
+            data-related-empty
+            hidden
+          >
+            <h3>Похожие товары пока не найдены</h3>
+
+            <p data-related-empty-text>Посмотрите другие товары в каталоге.</p>
+
+            <a href="/catalog"> Перейти в каталог </a>
+          </div>
+
+          <!-- состояние 3: товары найдены -->
+          <div class="product-related__grid" data-related-grid hidden></div>
+        </section>
+
+        <div class="product-state" data-product-loading>
+          <p>Загружаем товар...</p>
+        </div>
+
+        <div
+          class="product-state product-state--error"
+          data-product-error
+          hidden
+        >
+          <h1>Товар не найден</h1>
+
+          <p>Возможно, товар был удалён или ссылка указана неверно.</p>
+
+          <a href="/catalog"> Вернуться в каталог </a>
+        </div>
+      </div>
+    </main>
+
+    <div data-include="/components/footer.html"></div>
+
+    <script src="/site/scripts/main.js"></script>
+    <script src="/site/scripts/product.js"></script>
+  </body>
+</html>

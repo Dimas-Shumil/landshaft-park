@@ -9,6 +9,7 @@ const helmet = require('helmet');
 const nodemailer = require('nodemailer');
 const { rateLimit } = require('express-rate-limit');
 const { z } = require('zod');
+const prisma = require('./lib/prisma');
 
 const publicRouter = require('./routes/public.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
@@ -32,9 +33,9 @@ function parseBoolean(value) {
 function isSmtpConfigured() {
   return Boolean(
     String(process.env.SMTP_HOST || '').trim() &&
-      String(process.env.SMTP_USER || '').trim() &&
-      String(process.env.SMTP_PASS || '') &&
-      String(process.env.TO_EMAIL || '').trim(),
+    String(process.env.SMTP_USER || '').trim() &&
+    String(process.env.SMTP_PASS || '') &&
+    String(process.env.TO_EMAIL || '').trim(),
   );
 }
 
@@ -64,7 +65,6 @@ const CALCULATE_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
 const CALCULATE_SPAM_SCORE_LIMIT = 3;
 
 const calculateFormChallenges = new Map();
-const recentCalculateRequests = new Map();
 
 const CALCULATE_SPAM_RULES = [
   {
@@ -78,13 +78,11 @@ const CALCULATE_SPAM_RULES = [
   },
   {
     score: 1,
-    pattern:
-      /(?:продвижени|маркетинг|таргет|реклам|seo|лидогенерац)\w*/iu,
+    pattern: /(?:продвижени|маркетинг|таргет|реклам|seo|лидогенерац)\w*/iu,
   },
   {
     score: 1,
-    pattern:
-      /(?:разработк|создани)\w*\s+(?:сайт|лендинг|приложени)\w*/iu,
+    pattern: /(?:разработк|создани)\w*\s+(?:сайт|лендинг|приложени)\w*/iu,
   },
   {
     score: 1,
@@ -137,11 +135,7 @@ const calculateRequestSchema = z
 
     formToken: z.string().trim().min(32).max(200),
 
-    formElapsedMs: z
-      .number()
-      .int()
-      .min(0)
-      .max(CALCULATE_FORM_MAX_AGE_MS),
+    formElapsedMs: z.number().int().min(0).max(CALCULATE_FORM_MAX_AGE_MS),
   })
   .strict();
 
@@ -208,16 +202,6 @@ function consumeCalculateFormChallenge(token) {
   calculateFormChallenges.delete(String(token || '').trim());
 }
 
-function cleanupRecentCalculateRequests(now = Date.now()) {
-  for (const [fingerprint, createdAt] of recentCalculateRequests) {
-    if (now - createdAt <= CALCULATE_DUPLICATE_WINDOW_MS) {
-      continue;
-    }
-
-    recentCalculateRequests.delete(fingerprint);
-  }
-}
-
 function createCalculateRequestFingerprint(data) {
   return crypto
     .createHash('sha256')
@@ -231,21 +215,6 @@ function createCalculateRequestFingerprint(data) {
       }),
     )
     .digest('hex');
-}
-
-function isDuplicateCalculateRequest(fingerprint) {
-  cleanupRecentCalculateRequests();
-
-  const createdAt = recentCalculateRequests.get(fingerprint);
-
-  return Boolean(
-    createdAt && Date.now() - createdAt <= CALCULATE_DUPLICATE_WINDOW_MS,
-  );
-}
-
-function rememberCalculateRequest(fingerprint) {
-  cleanupRecentCalculateRequests();
-  recentCalculateRequests.set(fingerprint, Date.now());
 }
 
 function normalizeRussianPhone(value) {
@@ -330,9 +299,8 @@ function validateRequestOrigin(req, res, next) {
   }
 
   try {
-    const requestOrigin = new URL(
-      `${req.protocol}://${req.get('host') || ''}`,
-    ).origin;
+    const requestOrigin = new URL(`${req.protocol}://${req.get('host') || ''}`)
+      .origin;
 
     if (new URL(origin).origin !== requestOrigin) {
       return res.status(403).json({
@@ -821,12 +789,312 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/requests/calculate/challenge', validateRequestOrigin, (req, res) => {
-  return res.json({
-    ok: true,
-    formToken: createCalculateFormChallenge(),
-  });
+app.get('/api/catalog/products', async (req, res, next) => {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        isPublished: true,
+
+        variants: {
+          some: {
+            isActive: true,
+          },
+        },
+      },
+
+      orderBy: [
+        {
+          sortOrder: 'asc',
+        },
+        {
+          id: 'asc',
+        },
+      ],
+
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+
+        shortDescription: true,
+
+        unit: true,
+        dimensions: true,
+        purpose: true,
+
+        sortOrder: true,
+
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+
+        images: {
+          orderBy: [
+            {
+              sortOrder: 'asc',
+            },
+            {
+              id: 'asc',
+            },
+          ],
+
+          select: {
+            id: true,
+            imagePath: true,
+            alt: true,
+            isMain: true,
+            sortOrder: true,
+          },
+        },
+
+        variants: {
+          where: {
+            isActive: true,
+          },
+
+          orderBy: [
+            {
+              sortOrder: 'asc',
+            },
+            {
+              price: 'asc',
+            },
+            {
+              id: 'asc',
+            },
+          ],
+
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+
+            color: true,
+            thicknessMm: true,
+            price: true,
+
+            sortOrder: true,
+          },
+        },
+      },
+    });
+
+    const catalogProducts = products.map((product) => {
+      const mainImage =
+        product.images.find((image) => image.isMain) ||
+        product.images[0] ||
+        null;
+
+      const prices = product.variants.map((variant) => variant.price);
+
+      const minPrice = prices.length
+        ? Math.min(...prices)
+        : null;
+
+      return {
+        id: product.id,
+
+        name: product.title,
+        slug: product.slug,
+
+        shortDescription: product.shortDescription,
+
+        category: product.category,
+
+        image: mainImage
+          ? {
+              id: mainImage.id,
+              path: mainImage.imagePath,
+              alt: mainImage.alt || product.title,
+            }
+          : null,
+
+        unit: product.unit,
+        size: product.dimensions,
+        purpose: product.purpose,
+
+        order: product.sortOrder,
+        minPrice,
+
+        variants: product.variants.map((variant) => ({
+          id: variant.id,
+          name: variant.name,
+          sku: variant.sku,
+
+          color: variant.color,
+          thickness: variant.thicknessMm,
+          price: variant.price,
+
+          order: variant.sortOrder,
+        })),
+      };
+    });
+
+    return res.json({
+      ok: true,
+      products: catalogProducts,
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
+
+app.get('/api/catalog/products/:slug', async (req, res, next) => {
+  try {
+    const slug = String(req.params.slug || '').trim();
+
+    if (!slug) {
+      return res.status(400).json({
+        error: 'Не указан slug товара',
+      });
+    }
+
+    const product = await prisma.product.findFirst({
+      where: {
+        slug,
+        isPublished: true,
+      },
+
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+
+        shortDescription: true,
+        description: true,
+
+        unit: true,
+        dimensions: true,
+        purpose: true,
+
+        seoTitle: true,
+        seoDescription: true,
+
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+
+        images: {
+          orderBy: [
+            {
+              sortOrder: 'asc',
+            },
+            {
+              id: 'asc',
+            },
+          ],
+
+          select: {
+            id: true,
+            imagePath: true,
+            alt: true,
+            isMain: true,
+            sortOrder: true,
+          },
+        },
+
+        variants: {
+          where: {
+            isActive: true,
+          },
+
+          orderBy: [
+            {
+              sortOrder: 'asc',
+            },
+            {
+              price: 'asc',
+            },
+            {
+              id: 'asc',
+            },
+          ],
+
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            color: true,
+            thicknessMm: true,
+            price: true,
+            sortOrder: true,
+          },
+        },
+      },
+    });
+
+    if (!product || product.variants.length === 0) {
+      return res.status(404).json({
+        error: 'Товар не найден',
+      });
+    }
+
+    return res.json({
+      ok: true,
+
+      product: {
+        id: product.id,
+        name: product.title,
+        slug: product.slug,
+
+        shortDescription: product.shortDescription,
+        description: product.description,
+
+        unit: product.unit,
+        size: product.dimensions,
+        purpose: product.purpose,
+
+        seo: {
+          title: product.seoTitle,
+          description: product.seoDescription,
+        },
+
+        category: product.category,
+
+        images: product.images.map((image) => ({
+          id: image.id,
+          path: image.imagePath,
+          alt: image.alt || product.title,
+          isMain: image.isMain,
+          order: image.sortOrder,
+        })),
+
+        variants: product.variants.map((variant) => ({
+          id: variant.id,
+          name: variant.name,
+          sku: variant.sku,
+
+          color: variant.color,
+          thickness: variant.thicknessMm,
+          price: variant.price,
+
+          order: variant.sortOrder,
+        })),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
+app.get(
+  '/api/requests/calculate/challenge',
+  validateRequestOrigin,
+  (req, res) => {
+    return res.json({
+      ok: true,
+      formToken: createCalculateFormChallenge(),
+    });
+  },
+);
 
 app.post(
   '/api/requests/calculate',
@@ -900,7 +1168,23 @@ app.post(
         comment: parsed.data.comment,
       });
 
-      if (isDuplicateCalculateRequest(duplicateFingerprint)) {
+      const duplicateSince = new Date(
+        Date.now() - CALCULATE_DUPLICATE_WINDOW_MS,
+      );
+
+      const duplicateRequest = await prisma.calculateRequest.findFirst({
+        where: {
+          dedupFingerprint: duplicateFingerprint,
+          createdAt: {
+            gte: duplicateSince,
+          },
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (duplicateRequest) {
         consumeCalculateFormChallenge(parsed.data.formToken);
 
         console.warn(`Антиспам: повтор заявки, IP: ${ipAddress}`);
@@ -908,35 +1192,58 @@ app.post(
         return acceptRequestSilently(res);
       }
 
-      if (!smtpTransporter) {
-        return res.status(503).json({
-          message:
-            'Отправка заявок временно недоступна. Позвоните нам по телефону.',
-        });
-      }
-
-      const request = {
-        name: parsed.data.name,
-        phone,
-        area: parsed.data.area || null,
-        purpose: parsed.data.purpose || null,
-        purposeLabel: parsed.data.purpose
-          ? PURPOSE_LABELS[parsed.data.purpose]
-          : 'Не указана',
-        comment: parsed.data.comment,
-        delivery: parsed.data.delivery,
-        ipAddress,
-        userAgent,
-        createdAt: new Date(),
-      };
-
       consumeCalculateFormChallenge(parsed.data.formToken);
 
-      await sendCalculateEmail(request);
-      rememberCalculateRequest(duplicateFingerprint);
+      const createdAt = new Date();
+
+      const request = await prisma.calculateRequest.create({
+        data: {
+          name: parsed.data.name,
+          phone,
+          area: parsed.data.area ?? null,
+          purpose: parsed.data.purpose ?? null,
+          comment: parsed.data.comment,
+          delivery: parsed.data.delivery,
+
+          source: 'website',
+
+          dedupFingerprint: duplicateFingerprint,
+
+          ipAddress,
+          userAgent,
+
+          consentAccepted: true,
+          consentAcceptedAt: createdAt,
+        },
+      });
+
+      const mailRequest = {
+        ...request,
+
+        purposeLabel: request.purpose
+          ? PURPOSE_LABELS[request.purpose]
+          : 'Не указана',
+      };
+
+      if (smtpTransporter) {
+        try {
+          await sendCalculateEmail(mailRequest);
+
+          console.log(`Письмо по заявке #${request.id} отправлено менеджеру`);
+        } catch (error) {
+          console.error(
+            `SMTP: заявка #${request.id} сохранена, но письмо не отправлено:`,
+            error.message,
+          );
+        }
+      } else {
+        console.error(
+          `SMTP не настроен: заявка #${request.id} сохранена в базе без отправки письма`,
+        );
+      }
 
       console.log(
-        `Заявка на расчёт отправлена: ${request.name}, ${request.phone}`,
+        `Заявка на расчёт #${request.id} сохранена: ${request.name}, ${request.phone}`,
       );
 
       return res.status(201).json({
@@ -944,22 +1251,8 @@ app.post(
         message: 'Заявка отправлена',
       });
     } catch (error) {
-      if (
-        error?.code === 'EAUTH' ||
-        error?.code === 'ECONNECTION' ||
-        error?.code === 'ETIMEDOUT' ||
-        error?.code === 'ESOCKET'
-      ) {
-        console.error('SMTP: письмо не отправлено:', error.message);
-
-        return res.status(503).json({
-          message:
-            'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам.',
-        });
-      }
-
-      return next(error);
-    }
+  return next(error);
+}
   },
 );
 

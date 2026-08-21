@@ -14,4 +14,8 @@ router.get('/catalog', (req, res) => {
   res.sendFile(path.join(publicDir, 'catalog.html'));
 });
 
+router.get('/product', (req, res) => {
+  res.sendFile(path.join(publicDir, 'product.html'));
+});
+
 module.exports = router;
