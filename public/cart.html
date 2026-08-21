@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Корзина товаров Ландшафт Парк — выбранная тротуарная плитка и элементы благоустройства."
+    />
+
+    <link rel="stylesheet" href="/site/css/cart.min.css" />
+
+    <title>Корзина | Ландшафт Парк</title>
+  </head>
+
+  <body>
+    <div data-include="/components/header.html"></div>
+
+    <main class="cart-page">
+      <div class="cart-page__container">
+        <nav class="cart-breadcrumbs" aria-label="Хлебные крошки">
+          <a href="/">Главная</a>
+          <span aria-hidden="true">›</span>
+          <span>Корзина</span>
+        </nav>
+
+        <div class="cart-heading">
+          <div>
+            <p class="cart-heading__eyebrow">Ваш выбор</p>
+            <h1>Корзина</h1>
+          </div>
+
+          <a href="/catalog" class="cart-heading__catalog-link">
+            Продолжить покупки
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+
+        <section class="cart-layout" data-cart-content hidden>
+          <div class="cart-items" data-cart-items></div>
+
+          <aside class="cart-summary" aria-label="Итоги корзины">
+            <p class="cart-summary__eyebrow">Предварительный расчёт</p>
+            <h2>Ваш заказ</h2>
+
+            <dl class="cart-summary__rows">
+              <div>
+                <dt>Позиций</dt>
+                <dd data-cart-lines>0</dd>
+              </div>
+
+              <div>
+                <dt>Количество</dt>
+                <dd data-cart-quantity>0</dd>
+              </div>
+            </dl>
+
+            <div class="cart-summary__total">
+              <span>Промежуточный итог</span>
+              <strong data-cart-total>0 ₽</strong>
+            </div>
+
+            <p class="cart-summary__note">
+              Цена в корзине предварительная. Наличие, точное количество,
+              доставка и итоговая стоимость подтверждаются менеджером.
+            </p>
+
+            <button
+              class="cart-summary__checkout"
+              type="button"
+              data-cart-checkout
+            >
+              Перейти к оформлению
+            </button>
+          </aside>
+        </section>
+
+        <section class="cart-empty" data-cart-empty hidden>
+          <div class="cart-empty__icon" aria-hidden="true">
+            <img src="/site/images/cart-green.png" alt="" />
+          </div>
+
+          <p class="cart-empty__eyebrow">Пока пусто</p>
+          <h1>В корзине нет товаров</h1>
+          <p>
+            Перейдите в каталог, выберите подходящую плитку или элементы
+            благоустройства и добавьте их сюда.
+          </p>
+
+          <a href="/catalog">Перейти в каталог</a>
+        </section>
+
+        <section class="cart-checkout" id="checkout" data-checkout-section hidden>
+          <div class="cart-checkout__top">
+            <div>
+              <p class="cart-checkout__eyebrow">Следующий шаг</p>
+              <h2>Оформление заказа</h2>
+            </div>
+
+            <button
+              class="cart-checkout__close"
+              type="button"
+              aria-label="Закрыть оформление"
+              data-checkout-close
+            >
+              ×
+            </button>
+          </div>
+
+          <p class="cart-checkout__text">
+            Далее вы укажете контактные данные и способ получения. Перед
+            подтверждением заказа менеджер проверит наличие, количество,
+            доставку и итоговую стоимость.
+          </p>
+
+          <div class="cart-checkout__steps" aria-label="Этапы оформления">
+            <div>
+              <span>01</span>
+              <p>Контактные данные</p>
+            </div>
+            <div>
+              <span>02</span>
+              <p>Получение и доставка</p>
+            </div>
+            <div>
+              <span>03</span>
+              <p>Подтверждение менеджером</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="cart-status" aria-live="polite" data-cart-status></div>
+      </div>
+    </main>
+
+    <div data-include="/components/footer.html"></div>
+
+    <script src="/site/scripts/main.js"></script>
+    <script src="/site/scripts/cart.js"></script>
+  </body>
+</html>

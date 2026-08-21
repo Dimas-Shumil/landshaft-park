@@ -151,95 +151,13 @@
             <h2>Популярные товары</h2>
           </div>
 
-          <div class="products-grid">
-            <article class="product-card">
-              <div class="product-card__image">
-                <img
-                  src="/site/images/main-tovari/old-city.png"
-                  alt="Старый город"
-                />
-              </div>
-
-              <div class="product-card__content">
-                <h3>Старый город</h3>
-                <p class="product-card__subtitle">60 мм • Серый</p>
-
-                <ul class="product-card__list">
-                  <li>60 / 90 / 120 мм</li>
-                  <li>Для двора и дорожек</li>
-                </ul>
-
-                <div class="product-card__price">от 1 250 ₽/м²</div>
-
-                <a href="#calculate" class="product-card__button">В корзину</a>
-              </div>
-            </article>
-
-            <article class="product-card">
-              <div class="product-card__image">
-                <img
-                  src="/site/images/main-tovari/kirpichik.png"
-                  alt="Кирпичик"
-                />
-              </div>
-
-              <div class="product-card__content">
-                <h3>Кирпичик</h3>
-                <p class="product-card__subtitle">60 мм • Коричневый</p>
-
-                <ul class="product-card__list">
-                  <li>200 × 100 × 60 мм</li>
-                  <li>Парковки и отмостки</li>
-                </ul>
-
-                <div class="product-card__price">от 1 150 ₽/м²</div>
-
-                <a href="#calculate" class="product-card__button">В корзину</a>
-              </div>
-            </article>
-
-            <article class="product-card">
-              <div class="product-card__image">
-                <img
-                  src="/site/images/main-tovari/classik.png"
-                  alt="Классика"
-                />
-              </div>
-
-              <div class="product-card__content">
-                <h3>Классика</h3>
-                <p class="product-card__subtitle">60 мм • Серый</p>
-
-                <ul class="product-card__list">
-                  <li>200 × 200 × 60 мм</li>
-                  <li>Универсальное решение</li>
-                </ul>
-
-                <div class="product-card__price">от 1 190 ₽/м²</div>
-
-                <a href="#calculate" class="product-card__button">В корзину</a>
-              </div>
-            </article>
-
-            <article class="product-card">
-              <div class="product-card__image">
-                <img src="/site/images/main-tovari/parket.png" alt="Паркет" />
-              </div>
-
-              <div class="product-card__content">
-                <h3>Паркет</h3>
-                <p class="product-card__subtitle">60 мм • Графит</p>
-
-                <ul class="product-card__list">
-                  <li>300 × 150 × 60 мм</li>
-                  <li>Премиальный вид</li>
-                </ul>
-
-                <div class="product-card__price">от 1 290 ₽/м²</div>
-
-                <a href="#calculate" class="product-card__button">В корзину</a>
-              </div>
-            </article>
+          <div
+            class="products-grid"
+            data-popular-products
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <p class="products__status">Загружаем популярные товары...</p>
           </div>
         </div>
       </section>

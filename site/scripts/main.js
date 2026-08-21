@@ -188,6 +188,219 @@ function initGlobalCartCounter() {
   window.addEventListener('cart:updated', updateGlobalCartCount);
 }
 
+// популярные товары
+
+function formatProductPrice(value) {
+  return new Intl.NumberFormat('ru-RU').format(value);
+}
+
+function escapeHtml(value) {
+  const symbols = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+
+  return String(value ?? '').replace(/[&<>"']/g, (symbol) => symbols[symbol]);
+}
+
+function saveGlobalCart(cart) {
+  localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  window.dispatchEvent(new Event('cart:updated'));
+}
+
+function getPopularProductVariant(product) {
+  if (!Array.isArray(product?.variants) || product.variants.length === 0) {
+    return null;
+  }
+
+  return product.variants.reduce((cheapestVariant, variant) => {
+    if (!cheapestVariant) {
+      return variant;
+    }
+
+    return Number(variant.price) < Number(cheapestVariant.price)
+      ? variant
+      : cheapestVariant;
+  }, null);
+}
+
+function addPopularProductToCart(product, variant, button) {
+  const cart = getGlobalCart();
+  const existingItem = cart.find(
+    (item) => Number(item.variantId) === Number(variant.id),
+  );
+
+  if (existingItem) {
+    existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
+  } else {
+    cart.push({
+      productId: product.id,
+      variantId: variant.id,
+      slug: product.slug,
+      name: product.name,
+      variantName: variant.name,
+      color: variant.color,
+      thickness: variant.thickness,
+      image: product.image?.path || '',
+      price: variant.price,
+      unit: product.unit,
+      quantity: 1,
+      area: null,
+    });
+  }
+
+  saveGlobalCart(cart);
+
+  if (!button) return;
+
+  const originalText = button.textContent;
+
+  button.textContent = 'Добавлено';
+  button.classList.add('is-added');
+  button.disabled = true;
+
+  window.setTimeout(() => {
+    button.textContent = originalText;
+    button.classList.remove('is-added');
+    button.disabled = false;
+  }, 900);
+}
+
+function createPopularProductCard(product) {
+  const variant = getPopularProductVariant(product);
+
+  if (!variant || !Number.isFinite(Number(variant.price))) {
+    return null;
+  }
+
+  const article = document.createElement('article');
+  article.className = 'product-card';
+
+  const productName = escapeHtml(product.name || 'Товар');
+  const productSlug = encodeURIComponent(product.slug || '');
+  const imagePath = escapeHtml(product.image?.path || '');
+  const imageAlt = escapeHtml(product.image?.alt || product.name || 'Товар');
+
+  const thickness =
+    variant.thickness !== null && variant.thickness !== undefined
+      ? `${escapeHtml(variant.thickness)} мм`
+      : 'Толщина уточняется';
+
+  const color = escapeHtml(variant.color || 'Цвет уточняется');
+  const size = escapeHtml(product.size || 'Размер уточняется');
+  const purpose = escapeHtml(product.purpose || 'Назначение уточняется');
+  const unit = escapeHtml(product.unit || 'шт.');
+
+  article.innerHTML = `
+    <a
+      href="/product?slug=${productSlug}"
+      class="product-card__image"
+      aria-label="${productName}"
+    >
+      ${
+        imagePath
+          ? `<img src="${imagePath}" alt="${imageAlt}" loading="lazy" />`
+          : ''
+      }
+    </a>
+
+    <div class="product-card__content">
+      <h3>
+        <a href="/product?slug=${productSlug}">${productName}</a>
+      </h3>
+
+      <p class="product-card__subtitle">${thickness} • ${color}</p>
+
+      <ul class="product-card__list">
+        <li>${size}</li>
+        <li>${purpose}</li>
+      </ul>
+
+      <div class="product-card__price">
+        от ${formatProductPrice(Number(variant.price))} ₽/${unit}
+      </div>
+
+      <button class="product-card__button" type="button">
+        В корзину
+      </button>
+    </div>
+  `;
+
+  const button = article.querySelector('.product-card__button');
+
+  button?.addEventListener('click', () => {
+    addPopularProductToCart(product, variant, button);
+  });
+
+  return article;
+}
+
+function renderPopularProductsStatus(grid, message) {
+  grid.innerHTML = '';
+
+  const status = document.createElement('p');
+  status.className = 'products__status';
+  status.textContent = message;
+
+  grid.appendChild(status);
+}
+
+async function initPopularProducts() {
+  const grid = document.querySelector('[data-popular-products]');
+
+  if (!grid) return;
+
+  try {
+    const response = await fetch('/api/catalog/products', {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+      cache: 'no-store',
+    });
+
+    let data = {};
+
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Не удалось загрузить популярные товары.');
+    }
+
+    if (!Array.isArray(data.products)) {
+      throw new Error('Сервер вернул некорректные данные каталога.');
+    }
+
+    const cards = data.products
+      .slice(0, 4)
+      .map(createPopularProductCard)
+      .filter(Boolean);
+
+    if (cards.length === 0) {
+      renderPopularProductsStatus(grid, 'Популярные товары пока не добавлены.');
+      return;
+    }
+
+    grid.innerHTML = '';
+    cards.forEach((card) => grid.appendChild(card));
+  } catch (error) {
+    console.error('Ошибка загрузки популярных товаров:', error);
+    renderPopularProductsStatus(
+      grid,
+      'Не удалось загрузить популярные товары. Обновите страницу позже.',
+    );
+  } finally {
+    grid.setAttribute('aria-busy', 'false');
+  }
+}
+
 // отправка формы
 
 function initCalculateForm() {
@@ -380,6 +593,7 @@ async function initApp() {
   initSectionAnimations();
   initFloatingCall();
   initCalculateForm();
+  initPopularProducts();
 }
 
 document.addEventListener('DOMContentLoaded', () => {

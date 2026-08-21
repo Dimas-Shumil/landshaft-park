@@ -18,4 +18,8 @@ router.get('/product', (req, res) => {
   res.sendFile(path.join(publicDir, 'product.html'));
 });
 
+router.get('/cart', (req, res) => {
+  res.sendFile(path.join(publicDir, 'cart.html'));
+});
+
 module.exports = router;
