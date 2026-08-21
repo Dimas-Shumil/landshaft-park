@@ -562,7 +562,9 @@ function addToCart() {
   );
 
   if (existingItem) {
-    existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
+    existingItem.quantity = area
+      ? 1
+      : (Number(existingItem.quantity) || 1) + 1;
   } else {
     const image = getMainImage(currentProduct);
 

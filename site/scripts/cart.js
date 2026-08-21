@@ -12,7 +12,16 @@
   const checkoutButton = document.querySelector('[data-cart-checkout]');
   const checkoutSection = document.querySelector('[data-checkout-section]');
   const checkoutCloseButton = document.querySelector('[data-checkout-close]');
+  const orderForm = document.querySelector('[data-order-form]');
+  const orderSubmitButton = document.querySelector('[data-order-submit]');
+  const orderMessage = document.querySelector('[data-order-message]');
+  const deliveryAddressField = document.querySelector('[data-delivery-address]');
+  const orderSuccess = document.querySelector('[data-order-success]');
+  const orderNumberElement = document.querySelector('[data-order-number]');
+  const orderTotalElement = document.querySelector('[data-order-total]');
   const statusElement = document.querySelector('[data-cart-status]');
+
+  let hasCompletedOrder = false;
 
   if (
     !cartContent ||
@@ -61,6 +70,28 @@
     return Number.isFinite(area) && area > 0 ? area : null;
   }
 
+  function isSquareMeterUnit(value) {
+    const unit = String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '');
+
+    return ['м²', 'м2', 'м^2', 'кв.м', 'кв.м.'].includes(unit);
+  }
+
+  function usesAreaPricing(item) {
+    return normalizeArea(item.area) !== null && isSquareMeterUnit(item.unit);
+  }
+
+  function getLineTotal(item) {
+    const price = Number(item.price) || 0;
+    const multiplier = usesAreaPricing(item)
+      ? normalizeArea(item.area)
+      : normalizeQuantity(item.quantity);
+
+    return Math.round(price * Number(multiplier || 0));
+  }
+
   function getCart() {
     try {
       const rawCart = localStorage.getItem(CART_PAGE_STORAGE_KEY);
@@ -77,14 +108,22 @@
 
       return parsedCart
         .filter((item) => item && Number.isFinite(Number(item.variantId)))
-        .map((item) => ({
-          ...item,
-          variantId: Number(item.variantId),
-          productId: Number(item.productId) || null,
-          quantity: normalizeQuantity(item.quantity),
-          area: normalizeArea(item.area),
-          price: Number(item.price) || 0,
-        }));
+        .map((item) => {
+          const normalizedItem = {
+            ...item,
+            variantId: Number(item.variantId),
+            productId: Number(item.productId) || null,
+            quantity: normalizeQuantity(item.quantity),
+            area: normalizeArea(item.area),
+            price: Number(item.price) || 0,
+          };
+
+          if (usesAreaPricing(normalizedItem)) {
+            normalizedItem.quantity = 1;
+          }
+
+          return normalizedItem;
+        });
     } catch {
       return [];
     }
@@ -132,6 +171,15 @@
     }
   }
 
+  function setOrderMessage(message, isError = false) {
+    if (!orderMessage) {
+      return;
+    }
+
+    orderMessage.textContent = message;
+    orderMessage.classList.toggle('is-error', isError);
+  }
+
   function createCartItem(item) {
     const article = document.createElement('article');
     const itemKey = getItemKey(item);
@@ -140,7 +188,8 @@
     const imagePath = escapeHtml(item.image || '');
     const unit = escapeHtml(item.unit || 'шт.');
     const variantMeta = getVariantMeta(item);
-    const lineTotal = Number(item.price) * normalizeQuantity(item.quantity);
+    const lineTotal = getLineTotal(item);
+    const areaPricing = usesAreaPricing(item);
 
     article.className = 'cart-item';
     article.dataset.cartItemKey = itemKey;
@@ -214,34 +263,45 @@
         }
 
         <div class="cart-item__bottom">
-          <div class="cart-item__quantity" aria-label="Количество товара">
-            <button
-              type="button"
-              aria-label="Уменьшить количество"
-              data-cart-decrease
-            >
-              −
-            </button>
+          ${
+            areaPricing
+              ? `
+                <div class="cart-item__pricing-basis">
+                  <span>Расчёт по площади</span>
+                  <strong>${escapeHtml(item.area)} м²</strong>
+                </div>
+              `
+              : `
+                <div class="cart-item__quantity" aria-label="Количество товара">
+                  <button
+                    type="button"
+                    aria-label="Уменьшить количество"
+                    data-cart-decrease
+                  >
+                    −
+                  </button>
 
-            <input
-              type="number"
-              min="1"
-              max="999"
-              step="1"
-              inputmode="numeric"
-              value="${normalizeQuantity(item.quantity)}"
-              aria-label="Количество"
-              data-cart-quantity-input
-            />
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    step="1"
+                    inputmode="numeric"
+                    value="${normalizeQuantity(item.quantity)}"
+                    aria-label="Количество"
+                    data-cart-quantity-input
+                  />
 
-            <button
-              type="button"
-              aria-label="Увеличить количество"
-              data-cart-increase
-            >
-              +
-            </button>
-          </div>
+                  <button
+                    type="button"
+                    aria-label="Увеличить количество"
+                    data-cart-increase
+                  >
+                    +
+                  </button>
+                </div>
+              `
+          }
 
           <div class="cart-item__price">
             <span>${formatPrice(item.price)} ₽/${unit}</span>
@@ -255,14 +315,11 @@
   }
 
   function updateSummary(cart) {
-    const totalQuantity = cart.reduce(
-      (sum, item) => sum + normalizeQuantity(item.quantity),
-      0,
-    );
-
-    const total = cart.reduce((sum, item) => {
-      return sum + Number(item.price || 0) * normalizeQuantity(item.quantity);
+    const totalQuantity = cart.reduce((sum, item) => {
+      return sum + (usesAreaPricing(item) ? 1 : normalizeQuantity(item.quantity));
     }, 0);
+
+    const total = cart.reduce((sum, item) => sum + getLineTotal(item), 0);
 
     linesElement.textContent = String(cart.length);
     quantityElement.textContent = String(totalQuantity);
@@ -270,6 +327,17 @@
   }
 
   function renderCart() {
+    if (hasCompletedOrder) {
+      cartContent.hidden = true;
+      emptyState.hidden = true;
+      checkoutSection?.setAttribute('hidden', '');
+      orderSuccess?.removeAttribute('hidden');
+      updateSummary([]);
+      return;
+    }
+
+    orderSuccess?.setAttribute('hidden', '');
+
     const cart = getCart();
     const hasItems = cart.length > 0;
 
@@ -301,7 +369,12 @@
       return;
     }
 
-    cart[itemIndex].quantity = normalizeQuantity(nextQuantity);
+    if (usesAreaPricing(cart[itemIndex])) {
+      cart[itemIndex].quantity = 1;
+    } else {
+      cart[itemIndex].quantity = normalizeQuantity(nextQuantity);
+    }
+
     saveCart(cart);
     renderCart();
   }
@@ -320,6 +393,132 @@
     saveCart(cart);
     renderCart();
     setStatus(`${removedItem?.name || 'Товар'} удалён из корзины`);
+  }
+
+  function updateDeliveryAddressState() {
+    if (!orderForm || !deliveryAddressField) {
+      return;
+    }
+
+    const method = orderForm.elements.fulfillmentMethod?.value;
+    const addressInput = orderForm.elements.deliveryAddress;
+    const needsAddress = method === 'DELIVERY';
+
+    deliveryAddressField.hidden = !needsAddress;
+
+    if (addressInput) {
+      addressInput.required = needsAddress;
+      addressInput.disabled = !needsAddress;
+
+      if (!needsAddress) {
+        addressInput.value = '';
+      }
+    }
+  }
+
+  async function submitOrder(event) {
+    event.preventDefault();
+
+    if (!orderForm || !orderSubmitButton) {
+      return;
+    }
+
+    const cart = getCart();
+
+    if (!cart.length) {
+      setOrderMessage('Корзина пуста. Добавьте товары перед оформлением.', true);
+      renderCart();
+      return;
+    }
+
+    updateDeliveryAddressState();
+
+    if (!orderForm.reportValidity()) {
+      return;
+    }
+
+    const formData = new FormData(orderForm);
+    const fulfillmentMethod = String(
+      formData.get('fulfillmentMethod') || 'PICKUP',
+    );
+
+    const payload = {
+      customer: {
+        name: String(formData.get('name') || '').trim(),
+        phone: String(formData.get('phone') || '').trim(),
+        comment: String(formData.get('comment') || '').trim(),
+        fulfillmentMethod,
+        deliveryAddress:
+          fulfillmentMethod === 'DELIVERY'
+            ? String(formData.get('deliveryAddress') || '').trim()
+            : '',
+        personalDataConsent:
+          formData.get('personalDataConsent') === 'on',
+      },
+      items: cart.map((item) => ({
+        variantId: Number(item.variantId),
+        quantity: usesAreaPricing(item) ? 1 : normalizeQuantity(item.quantity),
+        area: normalizeArea(item.area),
+      })),
+    };
+
+    const originalButtonText = orderSubmitButton.textContent;
+
+    orderSubmitButton.disabled = true;
+    orderSubmitButton.textContent = 'Отправляем заказ...';
+    setOrderMessage('');
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Не удалось отправить заказ.');
+      }
+
+      hasCompletedOrder = true;
+
+      if (orderNumberElement) {
+        orderNumberElement.textContent = data.order?.publicNumber || '—';
+      }
+
+      if (orderTotalElement) {
+        orderTotalElement.textContent = `${formatPrice(
+          data.order?.estimatedTotal,
+        )} ₽`;
+      }
+
+      localStorage.removeItem(CART_PAGE_STORAGE_KEY);
+      window.dispatchEvent(new Event('cart:updated'));
+
+      renderCart();
+      orderSuccess?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (error) {
+      console.error('Ошибка оформления заказа:', error);
+      setOrderMessage(
+        error instanceof Error
+          ? error.message
+          : 'Не удалось отправить заказ. Попробуйте ещё раз.',
+        true,
+      );
+    } finally {
+      orderSubmitButton.disabled = false;
+      orderSubmitButton.textContent = originalButtonText;
+    }
   }
 
   cartItemsElement.addEventListener('click', (event) => {
@@ -377,6 +576,7 @@
     }
 
     checkoutSection.hidden = false;
+    updateDeliveryAddressState();
     checkoutSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
@@ -388,6 +588,14 @@
     checkoutSection.hidden = true;
   });
 
+  orderForm?.addEventListener('change', (event) => {
+    if (event.target.matches('[name="fulfillmentMethod"]')) {
+      updateDeliveryAddressState();
+    }
+  });
+
+  orderForm?.addEventListener('submit', submitOrder);
+
   window.addEventListener('storage', (event) => {
     if (event.key === CART_PAGE_STORAGE_KEY) {
       renderCart();
@@ -396,5 +604,6 @@
 
   window.addEventListener('cart:updated', renderCart);
 
+  updateDeliveryAddressState();
   renderCart();
 })();

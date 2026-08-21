@@ -108,25 +108,131 @@
           </div>
 
           <p class="cart-checkout__text">
-            Далее вы укажете контактные данные и способ получения. Перед
-            подтверждением заказа менеджер проверит наличие, количество,
-            доставку и итоговую стоимость.
+            Укажите контакты и способ получения. Предварительная стоимость
+            будет пересчитана сервером по актуальным ценам из каталога.
+            Наличие, необходимое количество, доставку и итоговую стоимость
+            подтвердит менеджер.
           </p>
 
-          <div class="cart-checkout__steps" aria-label="Этапы оформления">
-            <div>
-              <span>01</span>
-              <p>Контактные данные</p>
+          <form class="cart-checkout__form" data-order-form novalidate>
+            <div class="cart-checkout__grid">
+              <label class="cart-checkout__field">
+                <span>Имя</span>
+                <input
+                  type="text"
+                  name="name"
+                  autocomplete="name"
+                  maxlength="80"
+                  required
+                  placeholder="Как к вам обращаться"
+                />
+              </label>
+
+              <label class="cart-checkout__field">
+                <span>Телефон</span>
+                <input
+                  type="tel"
+                  name="phone"
+                  autocomplete="tel"
+                  maxlength="30"
+                  required
+                  placeholder="+7 999 000-00-00"
+                />
+              </label>
             </div>
-            <div>
-              <span>02</span>
-              <p>Получение и доставка</p>
+
+            <fieldset class="cart-checkout__method">
+              <legend>Способ получения</legend>
+
+              <div class="cart-checkout__method-options">
+                <label>
+                  <input
+                    type="radio"
+                    name="fulfillmentMethod"
+                    value="PICKUP"
+                    checked
+                  />
+                  <span>Самовывоз</span>
+                </label>
+
+                <label>
+                  <input
+                    type="radio"
+                    name="fulfillmentMethod"
+                    value="DELIVERY"
+                  />
+                  <span>Доставка</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <label
+              class="cart-checkout__field cart-checkout__address"
+              data-delivery-address
+              hidden
+            >
+              <span>Адрес доставки</span>
+              <input
+                type="text"
+                name="deliveryAddress"
+                autocomplete="street-address"
+                maxlength="500"
+                placeholder="Населённый пункт, улица, дом"
+              />
+            </label>
+
+            <label class="cart-checkout__field">
+              <span>Комментарий</span>
+              <textarea
+                name="comment"
+                maxlength="1500"
+                rows="4"
+                placeholder="Например, удобное время для звонка или детали по доставке"
+              ></textarea>
+            </label>
+
+            <label class="cart-checkout__consent">
+              <input type="checkbox" name="personalDataConsent" required />
+              <span>
+                Я согласен на обработку персональных данных и принимаю
+                <a href="/privacy-policy.html" target="_blank" rel="noopener">
+                  политику конфиденциальности
+                </a>.
+              </span>
+            </label>
+
+            <div class="cart-checkout__actions">
+              <button type="submit" data-order-submit>
+                Отправить заказ менеджеру
+              </button>
+
+              <p>
+                Оплата на сайте не производится. Заказ считается заявкой на
+                подтверждение менеджером.
+              </p>
             </div>
-            <div>
-              <span>03</span>
-              <p>Подтверждение менеджером</p>
-            </div>
-          </div>
+
+            <p
+              class="cart-checkout__message"
+              aria-live="polite"
+              data-order-message
+            ></p>
+          </form>
+        </section>
+
+        <section class="cart-success" data-order-success hidden>
+          <p class="cart-success__eyebrow">Заказ принят</p>
+          <h2>Спасибо! Заявка передана менеджеру.</h2>
+          <p>
+            Номер заказа: <strong data-order-number></strong>. Менеджер свяжется
+            с вами, подтвердит наличие, количество, доставку и итоговую
+            стоимость.
+          </p>
+          <p>
+            Предварительная сумма по актуальным ценам каталога:
+            <strong data-order-total></strong>.
+          </p>
+          <a href="/catalog">Вернуться в каталог</a>
         </section>
 
         <div class="cart-status" aria-live="polite" data-cart-status></div>

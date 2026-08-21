@@ -165,7 +165,16 @@ function getGlobalCart() {
 
 function updateGlobalCartCount() {
   const total = getGlobalCart().reduce((sum, item) => {
-    const quantity = Math.max(1, Number(item.quantity) || 1);
+    const hasArea = Number(item.area) > 0;
+    const unit = String(item.unit || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '');
+    const usesAreaPricing =
+      hasArea && ['м²', 'м2', 'м^2', 'кв.м', 'кв.м.'].includes(unit);
+    const quantity = usesAreaPricing
+      ? 1
+      : Math.max(1, Number(item.quantity) || 1);
 
     return sum + quantity;
   }, 0);

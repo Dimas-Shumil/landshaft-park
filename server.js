@@ -149,6 +149,44 @@ const calculateLimiter = rateLimit({
   },
 });
 
+// заказ
+
+const ORDER_MAX_ITEMS = 50;
+const ORDER_MAX_ESTIMATED_TOTAL = 2_000_000_000;
+
+const orderItemSchema = z.object({
+  variantId: z.number().int().positive(),
+  quantity: z.number().int().min(1).max(999),
+  area: z.number().finite().positive().max(100_000).nullable().optional(),
+});
+
+const orderSchema = z.object({
+  customer: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2)
+      .max(80)
+      .transform((value) => value.replace(/\s+/g, ' ')),
+    phone: z.string().trim().min(7).max(30),
+    comment: z.string().trim().max(1500).optional().default(''),
+    fulfillmentMethod: z.enum(['PICKUP', 'DELIVERY']),
+    deliveryAddress: z.string().trim().max(500).optional().default(''),
+    personalDataConsent: z.literal(true),
+  }),
+  items: z.array(orderItemSchema).min(1).max(ORDER_MAX_ITEMS),
+});
+
+const orderLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    message: 'Слишком много попыток оформления. Подождите немного и попробуйте снова.',
+  },
+});
+
 function cleanupCalculateFormChallenges(now = Date.now()) {
   for (const [token, createdAt] of calculateFormChallenges) {
     if (now - createdAt <= CALCULATE_FORM_MAX_AGE_MS) {
@@ -240,6 +278,46 @@ function isValidCustomerName(value) {
   const letters = name.match(/\p{L}/gu) || [];
 
   return letters.length >= 2 && /^[\p{L}\s.'’`-]+$/u.test(name);
+}
+
+function isSquareMeterUnit(value) {
+  const unit = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
+
+  return ['м²', 'м2', 'м^2', 'кв.м', 'кв.м.'].includes(unit);
+}
+
+function calculateOrderLineTotal(unitPrice, unit, quantity, area) {
+  const usesArea = area !== null && area !== undefined && isSquareMeterUnit(unit);
+  const multiplier = usesArea ? area : quantity;
+  const total = Math.round(Number(unitPrice) * Number(multiplier));
+
+  if (
+    !Number.isSafeInteger(total) ||
+    total < 0 ||
+    total > ORDER_MAX_ESTIMATED_TOTAL
+  ) {
+    return null;
+  }
+
+  return total;
+}
+
+function createOrderPublicNumber() {
+  const datePart = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Krasnoyarsk',
+  })
+    .format(new Date())
+    .replace(/-/g, '');
+
+  const randomPart = crypto.randomBytes(4).toString('hex').toUpperCase();
+
+  return `LP-${datePart}-${randomPart}`;
 }
 
 function calculateRequestSpamScore(data) {
@@ -716,6 +794,281 @@ async function sendCalculateEmail(request) {
     subject: `Новая заявка на расчёт — ${safeSubjectName}`,
     text: buildCalculateEmailText(request),
     html: buildCalculateEmailHtml(request),
+  });
+}
+
+function formatOrderNumber(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return '0';
+  }
+
+  return new Intl.NumberFormat('ru-RU', {
+    maximumFractionDigits: 2,
+  }).format(number);
+}
+
+function formatOrderMoney(value) {
+  return `${formatOrderNumber(value)} ₽`;
+}
+
+function getFulfillmentMethodLabel(value) {
+  return value === 'DELIVERY' ? 'Доставка' : 'Самовывоз';
+}
+
+function buildOrderEmailText(order) {
+  const lines = [
+    `Новый заказ ${order.publicNumber} с сайта «Ландшафт Парк»`,
+    '',
+    `Клиент: ${order.customerName}`,
+    `Телефон: ${order.phone}`,
+    `Способ получения: ${getFulfillmentMethodLabel(order.fulfillmentMethod)}`,
+  ];
+
+  if (order.fulfillmentMethod === 'DELIVERY') {
+    lines.push(`Адрес доставки: ${order.deliveryAddress || 'Не указан'}`);
+  }
+
+  lines.push(`Комментарий: ${order.comment || 'Не указан'}`, '');
+  lines.push('Состав заказа:');
+
+  order.items.forEach((item, index) => {
+    lines.push('', `${index + 1}. ${item.productTitleSnapshot}`);
+
+    if (item.variantNameSnapshot) {
+      lines.push(`Вариант: ${item.variantNameSnapshot}`);
+    }
+
+    if (item.colorSnapshot) {
+      lines.push(`Цвет: ${item.colorSnapshot}`);
+    }
+
+    if (item.thicknessMmSnapshot !== null) {
+      lines.push(`Толщина: ${formatOrderNumber(item.thicknessMmSnapshot)} мм`);
+    }
+
+    lines.push(`Количество: ${formatOrderNumber(item.requestedQuantity)}`);
+
+    if (item.requestedArea !== null) {
+      lines.push(`Площадь: ${formatOrderNumber(item.requestedArea)} м²`);
+    }
+
+    lines.push(
+      `Цена: ${formatOrderMoney(item.unitPriceSnapshot)}${item.unitSnapshot ? `/${item.unitSnapshot}` : ''}`,
+      `Предварительная сумма позиции: ${formatOrderMoney(item.estimatedLineTotal)}`,
+    );
+  });
+
+  lines.push(
+    '',
+    `Предварительный итог: ${formatOrderMoney(order.estimatedTotal)}`,
+    `Получен: ${formatRequestDate(order.createdAt)}`,
+    '',
+    'Важно: стоимость предварительная. Наличие, необходимое количество, доставку и итоговую стоимость менеджер подтверждает после обработки заказа.',
+  );
+
+  return lines.join('\n');
+}
+
+function buildOrderEmailHtml(order) {
+  const safePublicNumber = escapeHtml(order.publicNumber);
+  const safeCustomerName = escapeHtml(order.customerName);
+  const safePhone = escapeHtml(order.phone);
+  const safeFulfillment = escapeHtml(
+    getFulfillmentMethodLabel(order.fulfillmentMethod),
+  );
+  const safeDeliveryAddress = order.deliveryAddress
+    ? escapeHtml(order.deliveryAddress).replace(/\r?\n/g, '<br>')
+    : 'Не указан';
+  const safeComment = order.comment
+    ? escapeHtml(order.comment).replace(/\r?\n/g, '<br>')
+    : 'Не указан';
+  const safeEstimatedTotal = escapeHtml(formatOrderMoney(order.estimatedTotal));
+  const safeDate = escapeHtml(formatRequestDate(order.createdAt));
+
+  const itemRows = order.items
+    .map((item, index) => {
+      const safeTitle = escapeHtml(item.productTitleSnapshot);
+      const safeVariant = item.variantNameSnapshot
+        ? escapeHtml(item.variantNameSnapshot)
+        : 'Не указан';
+      const safeColor = item.colorSnapshot
+        ? escapeHtml(item.colorSnapshot)
+        : 'Не указан';
+      const safeThickness =
+        item.thicknessMmSnapshot !== null
+          ? `${escapeHtml(formatOrderNumber(item.thicknessMmSnapshot))} мм`
+          : 'Не указана';
+      const safeQuantity = escapeHtml(
+        formatOrderNumber(item.requestedQuantity),
+      );
+      const safeArea =
+        item.requestedArea !== null
+          ? `${escapeHtml(formatOrderNumber(item.requestedArea))} м²`
+          : 'Не указана';
+      const safeUnit = escapeHtml(item.unitSnapshot || '');
+      const safeUnitPrice = escapeHtml(formatOrderMoney(item.unitPriceSnapshot));
+      const safeLineTotal = escapeHtml(
+        formatOrderMoney(item.estimatedLineTotal),
+      );
+
+      return `
+        <tr>
+          <td style="padding:22px 0;${index ? 'border-top:1px solid rgba(31,51,31,.10);' : ''}">
+            <div style="margin-bottom:12px;color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;line-height:1.35;">
+              ${index + 1}. ${safeTitle}
+            </div>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+              <tr>
+                <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Вариант</td>
+                <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeVariant}</td>
+              </tr>
+              <tr>
+                <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Цвет</td>
+                <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeColor}</td>
+              </tr>
+              <tr>
+                <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Толщина</td>
+                <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeThickness}</td>
+              </tr>
+              <tr>
+                <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Количество</td>
+                <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeQuantity}</td>
+              </tr>
+              <tr>
+                <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Площадь</td>
+                <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeArea}</td>
+              </tr>
+              <tr>
+                <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Цена</td>
+                <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeUnitPrice}${safeUnit ? `/${safeUnit}` : ''}</td>
+              </tr>
+              <tr>
+                <td style="padding:7px 14px 0 0;color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">Предварительно</td>
+                <td align="right" style="padding:7px 0 0;color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;line-height:1.5;">${safeLineTotal}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      `;
+    })
+    .join('');
+
+  const deliveryRow =
+    order.fulfillmentMethod === 'DELIVERY'
+      ? `
+        <tr>
+          <td style="padding:10px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Адрес доставки</td>
+          <td align="right" style="padding:10px 0 10px 18px;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeDeliveryAddress}</td>
+        </tr>
+      `
+      : '';
+
+  return `
+    <!doctype html>
+    <html lang="ru">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Новый заказ ${safePublicNumber}</title>
+      </head>
+      <body style="margin:0;padding:0;background:#eef1eb;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;background:#eef1eb;border-collapse:collapse;">
+          <tr>
+            <td align="center" style="padding:28px 14px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:680px;border-collapse:collapse;background:#fbfaf6;border-radius:12px;overflow:hidden;">
+                <tr>
+                  <td style="padding:30px 34px;background:#2f4a2f;color:#ffffff;">
+                    <div style="margin-bottom:8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.10em;text-transform:uppercase;opacity:.74;">Ландшафт Парк</div>
+                    <div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.15;">Новый заказ ${safePublicNumber}</div>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:30px 34px 8px;">
+                    <div style="margin-bottom:18px;color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;">Клиент</div>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="padding:10px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Имя</td>
+                        <td align="right" style="padding:10px 0 10px 18px;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeCustomerName}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:10px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Телефон</td>
+                        <td align="right" style="padding:10px 0 10px 18px;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safePhone}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:10px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">Получение</td>
+                        <td align="right" style="padding:10px 0 10px 18px;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeFulfillment}</td>
+                      </tr>
+                      ${deliveryRow}
+                      <tr>
+                        <td style="padding:10px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;vertical-align:top;">Комментарий</td>
+                        <td align="right" style="padding:10px 0 10px 18px;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${safeComment}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:20px 34px 4px;">
+                    <div style="color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:700;">Состав заказа</div>
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+                      ${itemRows}
+                    </table>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding:24px 34px;background:#f3f5f1;border-top:1px solid rgba(31,51,31,.08);">
+                    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
+                      <tr>
+                        <td style="color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;">Предварительный итог</td>
+                        <td align="right" style="color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:21px;font-weight:800;">${safeEstimatedTotal}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding-top:12px;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;">
+                          Стоимость предварительная. Наличие, необходимое количество, доставку и итоговую стоимость менеджер подтверждает после обработки заказа.
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="padding-top:14px;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.6;">Получен: ${safeDate}</td>
+                      </tr>
+                    </table>
+
+                    <div style="padding-top:22px;">
+                      <a href="tel:${safePhone}" style="display:inline-block;padding:13px 20px;border-radius:7px;color:#ffffff;background:#2f4a2f;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-decoration:none;text-transform:uppercase;">Позвонить клиенту</a>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+}
+
+async function sendOrderEmail(order) {
+  if (!smtpTransporter) {
+    throw new Error('SMTP не настроен');
+  }
+
+  const smtpUser = String(process.env.SMTP_USER || '').trim();
+  const toEmail = String(process.env.TO_EMAIL || '').trim();
+  const fromName =
+    cleanMailHeader(process.env.MAIL_FROM_NAME) || 'Ландшафт Парк';
+
+  const safePublicNumber = cleanMailHeader(order.publicNumber);
+  const safeCustomerName = cleanMailHeader(order.customerName);
+
+  return smtpTransporter.sendMail({
+    from: `"${fromName}" <${smtpUser}>`,
+    to: toEmail,
+    subject: `Новый заказ ${safePublicNumber} — ${safeCustomerName}`,
+    text: buildOrderEmailText(order),
+    html: buildOrderEmailHtml(order),
   });
 }
 
@@ -1253,6 +1606,262 @@ app.post(
     } catch (error) {
   return next(error);
 }
+  },
+);
+
+app.post(
+  '/api/orders',
+  orderLimiter,
+  validateRequestOrigin,
+  async (req, res, next) => {
+    try {
+      const parsed = orderSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: 'Проверьте данные заказа и состав корзины.',
+        });
+      }
+
+      const customer = parsed.data.customer;
+      const phone = normalizeRussianPhone(customer.phone);
+
+      if (!phone) {
+        return res.status(400).json({
+          message: 'Введите корректный российский номер телефона.',
+        });
+      }
+
+      if (!isValidCustomerName(customer.name)) {
+        return res.status(400).json({
+          message: 'Введите корректное имя без цифр и ссылок.',
+        });
+      }
+
+      if (
+        customer.fulfillmentMethod === 'DELIVERY' &&
+        !customer.deliveryAddress
+      ) {
+        return res.status(400).json({
+          message: 'Укажите адрес доставки.',
+        });
+      }
+
+      const variantIds = [
+        ...new Set(parsed.data.items.map((item) => item.variantId)),
+      ];
+
+      const variants = await prisma.productVariant.findMany({
+        where: {
+          id: {
+            in: variantIds,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          sku: true,
+          color: true,
+          thicknessMm: true,
+          price: true,
+          isActive: true,
+          product: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              unit: true,
+              dimensions: true,
+              isPublished: true,
+              images: {
+                orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+                select: {
+                  imagePath: true,
+                  isMain: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      const variantsById = new Map(
+        variants.map((variant) => [variant.id, variant]),
+      );
+
+      const unavailableItem = parsed.data.items.find((item) => {
+        const variant = variantsById.get(item.variantId);
+
+        return !variant || !variant.isActive || !variant.product.isPublished;
+      });
+
+      if (unavailableItem) {
+        return res.status(409).json({
+          message:
+            'Один из товаров больше недоступен. Обновите корзину и попробуйте снова.',
+        });
+      }
+
+      const orderItems = [];
+      let estimatedTotal = 0;
+
+      for (const item of parsed.data.items) {
+        const variant = variantsById.get(item.variantId);
+        const product = variant.product;
+        const requestedArea = item.area ?? null;
+        const usesArea =
+          requestedArea !== null && isSquareMeterUnit(product.unit);
+        const requestedQuantity = usesArea ? 1 : item.quantity;
+        const estimatedLineTotal = calculateOrderLineTotal(
+          variant.price,
+          product.unit,
+          requestedQuantity,
+          requestedArea,
+        );
+
+        if (estimatedLineTotal === null) {
+          return res.status(400).json({
+            message: 'Не удалось корректно рассчитать сумму заказа.',
+          });
+        }
+
+        estimatedTotal += estimatedLineTotal;
+
+        if (
+          !Number.isSafeInteger(estimatedTotal) ||
+          estimatedTotal > ORDER_MAX_ESTIMATED_TOTAL
+        ) {
+          return res.status(400).json({
+            message: 'Предварительная сумма заказа превышает допустимый лимит.',
+          });
+        }
+
+        orderItems.push({
+          productId: product.id,
+          variantId: variant.id,
+
+          productTitleSnapshot: product.title,
+          productSlugSnapshot: product.slug,
+
+          variantNameSnapshot: variant.name,
+          skuSnapshot: variant.sku || '',
+
+          imagePathSnapshot:
+            product.images.find((image) => image.isMain)?.imagePath ||
+            product.images[0]?.imagePath ||
+            '',
+          unitSnapshot: product.unit,
+          dimensionsSnapshot: product.dimensions,
+
+          colorSnapshot: variant.color,
+          thicknessMmSnapshot: variant.thicknessMm,
+
+          unitPriceSnapshot: variant.price,
+
+          requestedQuantity,
+          requestedArea,
+
+          estimatedLineTotal,
+        });
+      }
+
+      const createdAt = new Date();
+      const ipAddress = getRequestIp(req);
+      const userAgent = getRequestUserAgent(req);
+
+      const order = await prisma.$transaction(async (tx) => {
+        return tx.order.create({
+          data: {
+            publicNumber: createOrderPublicNumber(),
+            idempotencyKey: crypto.randomUUID(),
+
+            customerName: customer.name,
+            phone,
+            comment: customer.comment,
+
+            fulfillmentMethod: customer.fulfillmentMethod,
+            deliveryAddress:
+              customer.fulfillmentMethod === 'DELIVERY'
+                ? customer.deliveryAddress
+                : '',
+
+            estimatedTotal,
+            source: 'catalog',
+
+            consentAccepted: true,
+            consentAcceptedAt: createdAt,
+
+            ipAddress,
+            userAgent,
+
+            items: {
+              create: orderItems,
+            },
+          },
+          select: {
+            id: true,
+            publicNumber: true,
+            customerName: true,
+            phone: true,
+            comment: true,
+            fulfillmentMethod: true,
+            deliveryAddress: true,
+            estimatedTotal: true,
+            createdAt: true,
+            items: {
+              orderBy: {
+                id: 'asc',
+              },
+              select: {
+                id: true,
+                productTitleSnapshot: true,
+                variantNameSnapshot: true,
+                unitSnapshot: true,
+                colorSnapshot: true,
+                thicknessMmSnapshot: true,
+                unitPriceSnapshot: true,
+                requestedQuantity: true,
+                requestedArea: true,
+                estimatedLineTotal: true,
+              },
+            },
+          },
+        });
+      });
+
+      console.log(
+        `Заказ ${order.publicNumber} сохранён: ${customer.name}, ${phone}, позиций: ${order.items.length}`,
+      );
+
+      if (smtpTransporter) {
+        try {
+          await sendOrderEmail(order);
+
+          console.log(`Письмо по заказу ${order.publicNumber} отправлено менеджеру`);
+        } catch (error) {
+          console.error(
+            `SMTP: заказ ${order.publicNumber} сохранён, но письмо не отправлено:`,
+            error.message,
+          );
+        }
+      } else {
+        console.error(
+          `SMTP не настроен: заказ ${order.publicNumber} сохранён в базе без отправки письма`,
+        );
+      }
+
+      return res.status(201).json({
+        ok: true,
+        message:
+          'Заказ принят. Менеджер подтвердит наличие, количество, доставку и итоговую стоимость.',
+        order: {
+          publicNumber: order.publicNumber,
+          estimatedTotal: order.estimatedTotal,
+        },
+      });
+    } catch (error) {
+      return next(error);
+    }
   },
 );
 
