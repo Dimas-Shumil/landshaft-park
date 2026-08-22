@@ -10,7 +10,13 @@ const resultsCount = document.querySelector('[data-results-count]');
 const filterCount = document.querySelector('[data-filter-count]');
 const filtersForm = document.querySelector('[data-filters]');
 const sortSelect = document.querySelector('[data-sort]');
-const categoryTabs = [...document.querySelectorAll('[data-category-tab]')];
+const categoryTabsContainer = document.querySelector('[data-category-tabs]');
+const categoryFiltersContainer = document.querySelector(
+  '[data-category-filters]',
+);
+let categoryTabs = [];
+
+const colorFiltersContainer = document.querySelector('[data-color-filters]');
 
 const priceMinInput = document.querySelector('[data-price-min]');
 const priceMaxInput = document.querySelector('[data-price-max]');
@@ -26,6 +32,58 @@ const emptyReset = document.querySelector('[data-empty-reset]');
 
 function formatPrice(value) {
   return new Intl.NumberFormat('ru-RU').format(value);
+}
+
+function getPriceLabel(value, unit) {
+  if (!Number.isFinite(Number(value)) || Number(value) <= 0) {
+    return 'Цена по запросу';
+  }
+
+  return `от ${formatPrice(value)} ₽/${unit}`;
+}
+
+function getColorHex(color) {
+  const normalizedColor = String(color ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (normalizedColor.includes('сер')) {
+    return '#8f8b82';
+  }
+
+  if (normalizedColor.includes('граф')) {
+    return '#555555';
+  }
+
+  if (normalizedColor.includes('корич')) {
+    return '#735444';
+  }
+
+  if (normalizedColor.includes('беж')) {
+    return '#c9b28a';
+  }
+
+  if (normalizedColor.includes('черн')) {
+    return '#222222';
+  }
+
+  if (normalizedColor.includes('бел')) {
+    return '#eeeeee';
+  }
+
+  if (normalizedColor.includes('син')) {
+    return '#2563eb';
+  }
+
+  if (normalizedColor.includes('зел')) {
+    return '#5f7655';
+  }
+
+  if (normalizedColor.includes('жел')) {
+    return '#d4b85a';
+  }
+
+  return '#777777';
 }
 
 function escapeHtml(value) {
@@ -190,7 +248,9 @@ function getMatchingVariants(product) {
     const thicknessMatches =
       thicknesses.length === 0 || thicknesses.includes(variant.thickness);
 
-    const priceMatches = variant.price >= minPrice && variant.price <= maxPrice;
+    const priceMatches =
+      Number(variant.price) <= 0 ||
+      (variant.price >= minPrice && variant.price <= maxPrice);
 
     return colorMatches && thicknessMatches && priceMatches;
   });
@@ -333,7 +393,7 @@ function createProductCard(product) {
       </ul>
 
       <p class="catalog-card__price">
-        от ${formatPrice(displayPrice)} ₽/${unit}
+       ${getPriceLabel(displayPrice, unit)}
       </p>
 
       <button
@@ -365,6 +425,115 @@ function syncCategoryUI(category) {
   if (categoryInput) {
     categoryInput.checked = true;
   }
+}
+
+function renderCategories() {
+  if (!categoryTabsContainer || !categoryFiltersContainer) {
+    return;
+  }
+
+  const categories = [
+    ...new Set(
+      catalogProducts.map((product) => product.category?.name).filter(Boolean),
+    ),
+  ];
+
+  categoryTabsContainer.innerHTML = '';
+  categoryFiltersContainer.innerHTML = '';
+
+  categories.forEach((category, index) => {
+    const button = document.createElement('button');
+    button.className = 'catalog-categories__button';
+    button.type = 'button';
+    button.dataset.categoryTab = category;
+    button.textContent = category;
+
+    if (index === 0) {
+      button.classList.add('is-active');
+    }
+
+    categoryTabsContainer.append(button);
+
+    const label = document.createElement('label');
+    label.className = 'catalog-check';
+    label.innerHTML = `
+      <input type="radio" name="category" value="${escapeHtml(category)}" ${index === 0 ? 'checked' : ''}>
+      <span>${escapeHtml(category)}</span>
+    `;
+
+    categoryFiltersContainer.append(label);
+  });
+
+  categoryTabs = [...document.querySelectorAll('[data-category-tab]')];
+
+  categoryTabs.forEach((button) => {
+    button.addEventListener('click', () => {
+      const category = button.dataset.categoryTab;
+      const input = filtersForm.querySelector(
+        `input[name="category"][value="${CSS.escape(category)}"]`,
+      );
+
+      if (input) {
+        input.checked = true;
+      }
+
+      syncCategoryUI(category);
+      renderColors();
+      renderCatalog();
+    });
+  });
+}
+
+function renderColors() {
+  if (!colorFiltersContainer) {
+    return;
+  }
+
+  const activeCategory = getActiveCategory();
+
+  const colors = [
+    ...new Set(
+      catalogProducts
+        .filter((product) => {
+          return !activeCategory || product.category?.name === activeCategory;
+        })
+        .flatMap((product) => product.variants || [])
+        .map((variant) => variant.color)
+        .filter(Boolean),
+    ),
+  ];
+
+  colorFiltersContainer.innerHTML = '';
+
+  colors.forEach((color) => {
+    const label = document.createElement('label');
+
+    label.className = 'catalog-color';
+    label.title = color;
+    label.setAttribute('aria-label', color);
+
+    label.innerHTML = `
+      <input
+        type="checkbox"
+        name="color"
+        value="${escapeHtml(color)}"
+      />
+
+      <span data-color="${escapeHtml(getColorHex(color))}"></span>
+    `;
+
+    colorFiltersContainer.append(label);
+
+    applyColorSwatches();
+  });
+}
+
+function applyColorSwatches() {
+  document.querySelectorAll('[data-color]').forEach((element) => {
+    const color = element.dataset.color;
+
+    element.style.setProperty('--swatch', color);
+  });
 }
 
 function renderCatalog() {
@@ -588,6 +757,10 @@ document.addEventListener('keydown', (event) => {
 async function initCatalog() {
   try {
     await loadCatalogProducts();
+
+    renderCategories();
+    renderColors();
+
     renderCatalog();
   } catch (error) {
     showCatalogLoadError(error);

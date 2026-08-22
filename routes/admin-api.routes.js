@@ -857,6 +857,58 @@ router.patch(
   },
 );
 
+router.delete(
+  '/requests/orders/:id',
+  validateAdminWriteOrigin,
+  requireAdminCsrf,
+  async (req, res, next) => {
+    try {
+      const id = parsePositiveId(req.params.id);
+
+      if (!id) {
+        return res.status(400).json({
+          message: 'Некорректный ID заказа.',
+        });
+      }
+
+      const exists = await prisma.order.findUnique({
+        where: { id },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!exists) {
+        return res.status(404).json({
+          message: 'Заказ не найден.',
+        });
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.orderItem.deleteMany({
+          where: {
+            orderId: id,
+          },
+        });
+
+        await tx.order.delete({
+          where: {
+            id,
+          },
+        });
+      });
+
+      res.set('Cache-Control', 'no-store');
+
+      return res.json({
+        ok: true,
+      });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
 router.patch(
   '/requests/calculate/:id',
   validateAdminWriteOrigin,

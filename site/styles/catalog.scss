@@ -414,13 +414,13 @@
     width: 34px;
     height: 34px;
 
-    border: 2px solid transparent;
+    border: 2px solid rgba($color-primary-dark, 0.08);
     border-radius: 50%;
 
-    background: var(--swatch);
-    box-shadow:
-      0 0 0 1px rgba($color-primary-dark, 0.08),
-      inset 0 0 0 3px #ffffff;
+    background-color: var(--swatch, #777);
+    background-image: none;
+
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 
     transition:
       border-color 0.2s ease,
@@ -434,9 +434,10 @@
 
   input:checked + span {
     border-color: $color-primary;
+
     box-shadow:
-      0 0 0 2px rgba($color-primary, 0.15),
-      inset 0 0 0 3px #ffffff;
+      0 0 0 3px rgba($color-primary, 0.15),
+      0 1px 4px rgba(0, 0, 0, 0.12);
   }
 }
 
@@ -1186,5 +1187,33 @@
   .catalog-card__button,
   .catalog-empty button {
     transition: none;
+  }
+}
+
+.catalog-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 240px;
+  padding: 30px;
+
+  border: 1px solid $color-border-soft;
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: $color-text-muted;
+
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.catalog-color {
+  input:checked + span {
+    box-shadow:
+      0 0 0 2px $color-primary-dark,
+      inset 0 0 0 3px #ffffff;
   }
 }

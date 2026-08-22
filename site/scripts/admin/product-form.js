@@ -646,6 +646,19 @@
 
   async function loadProduct() {
     if (!state.productId) {
+      // Новый товар всегда открывается чистым, без данных существующих товаров.
+      if (titleInput) titleInput.value = '';
+      if (slugInput) slugInput.value = '';
+      if (categoryInput) categoryInput.value = '';
+      if (unitInput) unitInput.value = 'м²';
+      if (sortOrderInput) sortOrderInput.value = '100';
+      if (dimensionsInput) dimensionsInput.value = '';
+      if (purposeInput) purposeInput.value = '';
+      if (shortDescriptionInput) shortDescriptionInput.value = '';
+      if (descriptionInput) descriptionInput.value = '';
+      if (seoTitleInput) seoTitleInput.value = '';
+      if (seoDescriptionInput) seoDescriptionInput.value = '';
+      if (publishedInput) publishedInput.checked = false;
       renderVariants([{}]);
       state.images = [];
       renderImages();

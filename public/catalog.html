@@ -24,47 +24,7 @@
           <h1>Каталог</h1>
         </div>
 
-        <div class="catalog-categories" aria-label="Категории каталога">
-          <button
-            class="catalog-categories__button is-active"
-            type="button"
-            data-category-tab="Тротуарная плитка"
-          >
-            Тротуарная плитка
-          </button>
-
-          <button
-            class="catalog-categories__button"
-            type="button"
-            data-category-tab="Бордюры"
-          >
-            Бордюры
-          </button>
-
-          <button
-            class="catalog-categories__button"
-            type="button"
-            data-category-tab="Водостоки"
-          >
-            Водостоки
-          </button>
-
-          <button
-            class="catalog-categories__button"
-            type="button"
-            data-category-tab="Ступени"
-          >
-            Ступени
-          </button>
-
-          <button
-            class="catalog-categories__button"
-            type="button"
-            data-category-tab="Элементы благоустройства"
-          >
-            Элементы благоустройства
-          </button>
-        </div>
+        <div class="catalog-categories" aria-label="Категории каталога" data-category-tabs></div>
 
         <div class="catalog-toolbar">
           <button
@@ -126,78 +86,16 @@
               <details class="catalog-filter" open>
                 <summary>Категория</summary>
 
-                <div class="catalog-filter__content">
-                  <label class="catalog-check">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="Тротуарная плитка"
-                      checked
-                    />
-                    <span>Тротуарная плитка</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input type="radio" name="category" value="Бордюры" />
-                    <span>Бордюры</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input type="radio" name="category" value="Водостоки" />
-                    <span>Водостоки</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input type="radio" name="category" value="Ступени" />
-                    <span>Ступени</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input
-                      type="radio"
-                      name="category"
-                      value="Элементы благоустройства"
-                    />
-                    <span>Элементы благоустройства</span>
-                  </label>
-                </div>
+                <div class="catalog-filter__content" data-category-filters></div>
               </details>
 
               <details class="catalog-filter" open>
                 <summary>Цвет</summary>
 
                 <div class="catalog-filter__content">
-                  <div class="catalog-colors">
-                    <label
-                      class="catalog-color"
-                      title="Серый"
-                      aria-label="Серый"
-                    >
-                      <input type="checkbox" name="color" value="Серый" />
-                      <span style="--swatch: #aaa9a3"></span>
-                    </label>
-
-                    <label
-                      class="catalog-color"
-                      title="Графит"
-                      aria-label="Графит"
-                    >
-                      <input type="checkbox" name="color" value="Графит" />
-                      <span style="--swatch: #555a55"></span>
-                    </label>
-
-                    <label
-                      class="catalog-color"
-                      title="Коричневый"
-                      aria-label="Коричневый"
-                    >
-                      <input type="checkbox" name="color" value="Коричневый" />
-                      <span style="--swatch: #735444"></span>
-                    </label>
-                  </div>
-
+                  <div class="catalog-colors" data-color-filters></div>
                   <p class="catalog-filter__hint">
-                    Показываем только подтверждённые цвета из текущих товаров.
+                    Доступные цвета из текущего каталога.
                   </p>
                 </div>
               </details>

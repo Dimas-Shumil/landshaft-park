@@ -1163,10 +1163,11 @@ html {
   display: block;
   width: 34px;
   height: 34px;
-  border: 2px solid transparent;
+  border: 2px solid rgba(31, 51, 31, 0.08);
   border-radius: 50%;
-  background: var(--swatch);
-  box-shadow: 0 0 0 1px rgba(31, 51, 31, 0.08), inset 0 0 0 3px #ffffff;
+  background-color: var(--swatch, #777);
+  background-image: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 .catalog-color:hover span {
@@ -1174,7 +1175,7 @@ html {
 }
 .catalog-color input:checked + span {
   border-color: #2f4a2f;
-  box-shadow: 0 0 0 2px rgba(47, 74, 47, 0.15), inset 0 0 0 3px #ffffff;
+  box-shadow: 0 0 0 3px rgba(47, 74, 47, 0.15), 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
 .catalog-filter__hint {
@@ -1732,4 +1733,22 @@ html {
   .catalog-empty button {
     transition: none;
   }
+}
+.catalog-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 30px;
+  border: 1px solid rgba(31, 51, 31, 0.09);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #74806f;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.catalog-color input:checked + span {
+  box-shadow: 0 0 0 2px #1f331f, inset 0 0 0 3px #ffffff;
 }

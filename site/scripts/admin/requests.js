@@ -129,7 +129,8 @@
   }
 
   function applyUser(user) {
-    const name = String(user?.name || 'Администратор').trim() || 'Администратор';
+    const name =
+      String(user?.name || 'Администратор').trim() || 'Администратор';
 
     if (adminName) {
       adminName.textContent = name;
@@ -249,7 +250,10 @@
 
   function createStatusBadge(item) {
     const meta = getStatusMeta(item);
-    const badge = element('span', `admin-table__status ${meta.className}`.trim());
+    const badge = element(
+      'span',
+      `admin-table__status ${meta.className}`.trim(),
+    );
     badge.textContent = meta.label;
     return badge;
   }
@@ -262,7 +266,11 @@
     row.dataset.id = String(item.id);
 
     const numberCell = element('td');
-    const number = element('strong', 'admin-request-number', item.publicNumber || '—');
+    const number = element(
+      'strong',
+      'admin-request-number',
+      item.publicNumber || '—',
+    );
     numberCell.append(number);
 
     const dateCell = element('td', '', formatDate(item.createdAt));
@@ -309,11 +317,41 @@
     actionButton.type = 'button';
     actionButton.setAttribute('aria-label', 'Открыть обращение');
     actionButton.textContent = '›';
+
     actionButton.addEventListener('click', (event) => {
       event.stopPropagation();
       openDetail(item.type, item.id);
     });
-    actionCell.append(actionButton);
+
+    const deleteButton = element('button', 'admin-row-delete', 'Удалить');
+
+    deleteButton.type = 'button';
+
+    deleteButton.addEventListener('click', async (event) => {
+      event.stopPropagation();
+
+      if (item.type !== 'ORDER') {
+        showToast('Удаление заявок пока не добавлено.', 'error');
+        return;
+      }
+
+      const confirmed = window.confirm(`Удалить заказ ${item.publicNumber}?`);
+
+      if (!confirmed) {
+        return;
+      }
+
+      await deleteOrder(item.id);
+    });
+    actionButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openDetail(item.type, item.id);
+    });
+    const actions = element('div', 'admin-row-actions');
+
+    actions.append(deleteButton, actionButton);
+
+    actionCell.append(actions);
 
     row.append(
       numberCell,
@@ -345,11 +383,15 @@
 
     state.total = Number(pagination.total) || 0;
     state.totalPages = Math.max(1, Number(pagination.totalPages) || 1);
-    state.page = Math.min(Math.max(1, Number(pagination.page) || 1), state.totalPages);
+    state.page = Math.min(
+      Math.max(1, Number(pagination.page) || 1),
+      state.totalPages,
+    );
 
     if (countAll) countAll.textContent = String(counts.all ?? 0);
     if (countOrders) countOrders.textContent = String(counts.orders ?? 0);
-    if (countCalculate) countCalculate.textContent = String(counts.calculateRequests ?? 0);
+    if (countCalculate)
+      countCalculate.textContent = String(counts.calculateRequests ?? 0);
 
     requestsBody?.replaceChildren();
 
@@ -408,7 +450,10 @@
 
       if (!response.ok) {
         throw new Error(
-          await readResponseMessage(response, 'Не удалось загрузить обращения.'),
+          await readResponseMessage(
+            response,
+            'Не удалось загрузить обращения.',
+          ),
         );
       }
 
@@ -517,7 +562,10 @@
   }
 
   function createCommentField(value) {
-    const field = element('label', 'admin-manage-field admin-manage-field--wide');
+    const field = element(
+      'label',
+      'admin-manage-field admin-manage-field--wide',
+    );
     field.append(element('span', '', 'Внутренний комментарий'));
     const textarea = document.createElement('textarea');
     textarea.dataset.internalComment = '';
@@ -568,7 +616,8 @@
   function createOrderItemCard(item) {
     const card = element('article', 'admin-order-item');
     card.dataset.orderItemId = String(item.id);
-    const usesArea = isSquareMeterUnit(item.unitSnapshot) && item.requestedArea !== null;
+    const usesArea =
+      isSquareMeterUnit(item.unitSnapshot) && item.requestedArea !== null;
     card.dataset.usesArea = String(usesArea);
 
     const top = element('div', 'admin-order-item__top');
@@ -583,14 +632,33 @@
           .join(' · ') || 'Стандарт',
       ),
     );
-    top.append(titleWrap, element('strong', 'admin-order-item__estimate', formatCurrency(item.estimatedLineTotal)));
+    top.append(
+      titleWrap,
+      element(
+        'strong',
+        'admin-order-item__estimate',
+        formatCurrency(item.estimatedLineTotal),
+      ),
+    );
     card.append(top);
 
     const snapshot = element('div', 'admin-order-item__snapshot');
-    appendDetailValue(snapshot, 'Цена из заказа', `${formatCurrency(item.unitPriceSnapshot)} / ${item.unitSnapshot || 'шт.'}`);
-    appendDetailValue(snapshot, 'Количество', formatNumber(item.requestedQuantity));
+    appendDetailValue(
+      snapshot,
+      'Цена из заказа',
+      `${formatCurrency(item.unitPriceSnapshot)} / ${item.unitSnapshot || 'шт.'}`,
+    );
+    appendDetailValue(
+      snapshot,
+      'Количество',
+      formatNumber(item.requestedQuantity),
+    );
     if (item.requestedArea !== null) {
-      appendDetailValue(snapshot, 'Площадь', `${formatNumber(item.requestedArea)} м²`);
+      appendDetailValue(
+        snapshot,
+        'Площадь',
+        `${formatNumber(item.requestedArea)} м²`,
+      );
     }
     if (item.thicknessMmSnapshot !== null) {
       appendDetailValue(snapshot, 'Толщина', `${item.thicknessMmSnapshot} мм`);
@@ -615,7 +683,11 @@
       { value: 'false', label: 'Нет в наличии' },
     ];
     const currentAvailability =
-      item.isAvailable === true ? 'true' : item.isAvailable === false ? 'false' : '';
+      item.isAvailable === true
+        ? 'true'
+        : item.isAvailable === false
+          ? 'false'
+          : '';
     for (const option of availabilityOptions) {
       const node = document.createElement('option');
       node.value = option.value;
@@ -688,33 +760,47 @@
     );
     appendDetailValue(clientGrid, 'Источник', order.source || 'catalog');
     if (order.fulfillmentMethod === 'DELIVERY') {
-      appendDetailValue(clientGrid, 'Адрес', order.deliveryAddress || 'Не указан');
+      appendDetailValue(
+        clientGrid,
+        'Адрес',
+        order.deliveryAddress || 'Не указан',
+      );
     }
     clientSection.append(clientGrid);
 
     if (order.comment) {
       const note = element('div', 'admin-client-comment');
-      note.append(element('span', '', 'Комментарий клиента'), element('p', '', order.comment));
+      note.append(
+        element('span', '', 'Комментарий клиента'),
+        element('p', '', order.comment),
+      );
       clientSection.append(note);
     }
 
     const financeSection = detailSection('Стоимость');
     const totals = element('div', 'admin-detail-totals');
     const estimate = element('div');
-    estimate.append(element('span', '', 'Предварительно'), element('strong', '', formatCurrency(order.estimatedTotal)));
+    estimate.append(
+      element('span', '', 'Предварительно'),
+      element('strong', '', formatCurrency(order.estimatedTotal)),
+    );
     const confirmed = element('div');
     confirmed.append(
       element('span', '', 'Подтверждено'),
       element(
         'strong',
         '',
-        order.confirmedTotal === null ? 'Не указано' : formatCurrency(order.confirmedTotal),
+        order.confirmedTotal === null
+          ? 'Не указано'
+          : formatCurrency(order.confirmedTotal),
       ),
     );
     totals.append(estimate, confirmed);
     financeSection.append(totals);
 
-    const itemsSection = detailSection(`Позиции заказа · ${order.items.length}`);
+    const itemsSection = detailSection(
+      `Позиции заказа · ${order.items.length}`,
+    );
     const itemsWrap = element('div', 'admin-order-items');
     for (const item of order.items) {
       itemsWrap.append(createOrderItemCard(item));
@@ -745,7 +831,12 @@
     );
     manageSection.append(manageGrid);
 
-    detailBody.append(clientSection, financeSection, itemsSection, manageSection);
+    detailBody.append(
+      clientSection,
+      financeSection,
+      itemsSection,
+      manageSection,
+    );
   }
 
   function renderCalculateDetail(request) {
@@ -768,13 +859,20 @@
       'Назначение',
       PURPOSE_LABELS[request.purpose] || request.purpose || 'Не указано',
     );
-    appendDetailValue(clientGrid, 'Доставка', request.delivery ? 'Нужна' : 'Не нужна');
+    appendDetailValue(
+      clientGrid,
+      'Доставка',
+      request.delivery ? 'Нужна' : 'Не нужна',
+    );
     appendDetailValue(clientGrid, 'Источник', request.source || 'website');
     clientSection.append(clientGrid);
 
     if (request.comment) {
       const note = element('div', 'admin-client-comment');
-      note.append(element('span', '', 'Комментарий клиента'), element('p', '', request.comment));
+      note.append(
+        element('span', '', 'Комментарий клиента'),
+        element('p', '', request.comment),
+      );
       clientSection.append(note);
     }
 
@@ -801,9 +899,12 @@
 
   function renderDetail(type, data) {
     state.currentDetail = { type, id: data.id, data };
-    if (detailKicker) detailKicker.textContent = type === 'ORDER' ? 'Заказ' : 'Заявка на расчёт';
+    if (detailKicker)
+      detailKicker.textContent =
+        type === 'ORDER' ? 'Заказ' : 'Заявка на расчёт';
     if (detailNumber) detailNumber.textContent = data.publicNumber || '—';
-    if (detailDate) detailDate.textContent = `Создано ${formatDate(data.createdAt)}`;
+    if (detailDate)
+      detailDate.textContent = `Создано ${formatDate(data.createdAt)}`;
 
     if (type === 'ORDER') {
       renderOrderDetail(data);
@@ -828,7 +929,9 @@
     if (detailBody && detailLoading) {
       detailBody.replaceChildren(detailLoading);
     }
-    if (detailKicker) detailKicker.textContent = normalizedType === 'ORDER' ? 'Заказ' : 'Заявка на расчёт';
+    if (detailKicker)
+      detailKicker.textContent =
+        normalizedType === 'ORDER' ? 'Заказ' : 'Заявка на расчёт';
     if (detailNumber) detailNumber.textContent = 'Загрузка…';
     if (detailDate) detailDate.textContent = '';
 
@@ -850,7 +953,10 @@
       }
 
       const payload = await response.json();
-      renderDetail(normalizedType, normalizedType === 'ORDER' ? payload.order : payload.request);
+      renderDetail(
+        normalizedType,
+        normalizedType === 'ORDER' ? payload.order : payload.request,
+      );
     } catch (error) {
       showToast(error.message || 'Не удалось открыть обращение.', 'error');
       closeDetail();
@@ -868,7 +974,8 @@
   }
 
   function collectOrderUpdate() {
-    const status = detailBody?.querySelector('[data-detail-status]')?.value || 'NEW';
+    const status =
+      detailBody?.querySelector('[data-detail-status]')?.value || 'NEW';
     const confirmedTotal = parseNullableNumber(
       detailBody?.querySelector('[data-confirmed-total]'),
       { integer: true },
@@ -881,23 +988,31 @@
     }
 
     const items = [];
-    for (const card of detailBody?.querySelectorAll('[data-order-item-id]') || []) {
-      const availabilityValue = card.querySelector('[data-item-availability]')?.value || '';
+    for (const card of detailBody?.querySelectorAll('[data-order-item-id]') ||
+      []) {
+      const availabilityValue =
+        card.querySelector('[data-item-availability]')?.value || '';
       const isAvailable =
         availabilityValue === 'true'
           ? true
           : availabilityValue === 'false'
             ? false
             : null;
-      const confirmedQuantity = parseNullableNumber(card.querySelector('[data-item-quantity]'));
-      const confirmedArea = parseNullableNumber(card.querySelector('[data-item-area]'));
+      const confirmedQuantity = parseNullableNumber(
+        card.querySelector('[data-item-quantity]'),
+      );
+      const confirmedArea = parseNullableNumber(
+        card.querySelector('[data-item-area]'),
+      );
       const confirmedUnitPrice = parseNullableNumber(
         card.querySelector('[data-item-price]'),
         { integer: true },
       );
 
       if (
-        [confirmedQuantity, confirmedArea, confirmedUnitPrice].some(Number.isNaN)
+        [confirmedQuantity, confirmedArea, confirmedUnitPrice].some(
+          Number.isNaN,
+        )
       ) {
         throw new Error('Проверьте подтверждённые значения в позициях заказа.');
       }
@@ -920,6 +1035,45 @@
       internalComment:
         detailBody?.querySelector('[data-internal-comment]')?.value || '',
     };
+  }
+
+  async function deleteOrder(id) {
+    try {
+      if (!state.csrfToken) {
+        await loadSession();
+      }
+
+      const response = await fetch(`/api/admin/requests/orders/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          'X-CSRF-Token': state.csrfToken,
+        },
+        credentials: 'same-origin',
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await readResponseMessage(response, 'Не удалось удалить заказ.'),
+        );
+      }
+
+      showToast('Заказ удалён.');
+
+      if (
+        state.currentDetail &&
+        state.currentDetail.type === 'ORDER' &&
+        state.currentDetail.id === id
+      ) {
+        closeDetail();
+      }
+
+      await loadRequests({
+        quiet: true,
+      });
+    } catch (error) {
+      showToast(error.message || 'Не удалось удалить заказ.', 'error');
+    }
   }
 
   async function saveDetail() {
@@ -961,12 +1115,16 @@
 
       if (!response.ok) {
         throw new Error(
-          await readResponseMessage(response, 'Не удалось сохранить изменения.'),
+          await readResponseMessage(
+            response,
+            'Не удалось сохранить изменения.',
+          ),
         );
       }
 
       const payload = await response.json();
-      const updated = current.type === 'ORDER' ? payload.order : payload.request;
+      const updated =
+        current.type === 'ORDER' ? payload.order : payload.request;
       renderDetail(current.type, updated);
       showToast('Изменения сохранены.');
       await loadRequests({ quiet: true });
@@ -995,13 +1153,19 @@
     const id = Number(match[2]);
     if (!Number.isInteger(id) || id < 1) return;
 
-    openDetail(match[1].toLowerCase() === 'order' ? 'ORDER' : 'CALCULATE_REQUEST', id, {
-      updateUrl: false,
-    });
+    openDetail(
+      match[1].toLowerCase() === 'order' ? 'ORDER' : 'CALCULATE_REQUEST',
+      id,
+      {
+        updateUrl: false,
+      },
+    );
   }
 
   for (const tab of tabs) {
-    tab.addEventListener('click', () => applyType(tab.dataset.requestType || 'ALL'));
+    tab.addEventListener('click', () =>
+      applyType(tab.dataset.requestType || 'ALL'),
+    );
   }
 
   searchInput?.addEventListener('input', () => {
@@ -1036,7 +1200,9 @@
   sidebarOverlay?.addEventListener('click', () => setSidebar(false));
   logoutButton?.addEventListener('click', logout);
   detailOverlay?.addEventListener('click', closeDetail);
-  detailCloseButtons.forEach((button) => button.addEventListener('click', closeDetail));
+  detailCloseButtons.forEach((button) =>
+    button.addEventListener('click', closeDetail),
+  );
   detailSave?.addEventListener('click', saveDetail);
 
   document.querySelectorAll('[data-coming-soon]').forEach((button) => {

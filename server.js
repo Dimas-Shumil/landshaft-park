@@ -66,7 +66,7 @@ const CALCULATE_FORM_MIN_AGE_MS = 3_000;
 const CALCULATE_FORM_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 const CALCULATE_FORM_CHALLENGE_LIMIT = 5_000;
 const CALCULATE_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
-const CALCULATE_SPAM_SCORE_LIMIT = 3;
+const CALCULATE_SPAM_SCORE_LIMIT = 5;
 
 const calculateFormChallenges = new Map();
 
@@ -82,7 +82,7 @@ const CALCULATE_SPAM_RULES = [
   },
   {
     score: 1,
-    pattern: /(?:продвижени|маркетинг|таргет|реклам|seo|лидогенерац)\w*/iu,
+    pattern: /(?:маркетинг|таргет|реклам|лидогенерац)\w*/iu,
   },
   {
     score: 1,
@@ -90,8 +90,15 @@ const CALCULATE_SPAM_RULES = [
   },
   {
     score: 1,
-    pattern:
-      /(?:предлага\w*|предложени\w*|сотрудничеств\w*|увеличим\w*|привлеч[её]м\w*)/iu,
+    pattern: /(?:предлага\w*|предложени\w*|увеличим\w*|привлеч[её]м\w*)/iu,
+  },
+  {
+    score: 2,
+    pattern: /(?:продвижени\w*\s+(?:сайт|бизнес|компан)|seo|сео|раскрут\w*)/iu,
+  },
+  {
+    score: 1,
+    pattern: /(?:сотрудничеств\w*\s+(?:по|для)|агентств\w*)/iu,
   },
   {
     score: 1,
@@ -187,7 +194,8 @@ const orderLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: {
-    message: 'Слишком много попыток оформления. Подождите немного и попробуйте снова.',
+    message:
+      'Слишком много попыток оформления. Подождите немного и попробуйте снова.',
   },
 });
 
@@ -294,7 +302,8 @@ function isSquareMeterUnit(value) {
 }
 
 function calculateOrderLineTotal(unitPrice, unit, quantity, area) {
-  const usesArea = area !== null && area !== undefined && isSquareMeterUnit(unit);
+  const usesArea =
+    area !== null && area !== undefined && isSquareMeterUnit(unit);
   const multiplier = usesArea ? area : quantity;
   const total = Math.round(Number(unitPrice) * Number(multiplier));
 
@@ -912,7 +921,9 @@ function buildOrderEmailHtml(order) {
           ? `${escapeHtml(formatOrderNumber(item.requestedArea))} м²`
           : 'Не указана';
       const safeUnit = escapeHtml(item.unitSnapshot || '');
-      const safeUnitPrice = escapeHtml(formatOrderMoney(item.unitPriceSnapshot));
+      const safeUnitPrice = escapeHtml(
+        formatOrderMoney(item.unitPriceSnapshot),
+      );
       const safeLineTotal = escapeHtml(
         formatOrderMoney(item.estimatedLineTotal),
       );
@@ -1258,9 +1269,7 @@ app.get('/api/catalog/products', async (req, res, next) => {
 
       const prices = product.variants.map((variant) => variant.price);
 
-      const minPrice = prices.length
-        ? Math.min(...prices)
-        : null;
+      const minPrice = prices.length ? Math.min(...prices) : null;
 
       return {
         id: product.id,
@@ -1618,8 +1627,8 @@ app.post(
         message: 'Заявка отправлена',
       });
     } catch (error) {
-  return next(error);
-}
+      return next(error);
+    }
   },
 );
 
@@ -1851,7 +1860,9 @@ app.post(
         try {
           await sendOrderEmail(order);
 
-          console.log(`Письмо по заказу ${order.publicNumber} отправлено менеджеру`);
+          console.log(
+            `Письмо по заказу ${order.publicNumber} отправлено менеджеру`,
+          );
         } catch (error) {
           console.error(
             `SMTP: заказ ${order.publicNumber} сохранён, но письмо не отправлено:`,
