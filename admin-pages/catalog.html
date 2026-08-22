@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+
+    <link rel="stylesheet" href="/site/css/admin.min.css" />
+
+    <title>Каталог | Ландшафт Парк</title>
+  </head>
+
+  <body class="admin-page">
+    <div class="admin-layout">
+      <div class="admin-sidebar-overlay" data-sidebar-overlay></div>
+
+      <aside class="admin-sidebar" data-admin-sidebar>
+        <div class="admin-sidebar__top">
+          <a class="admin-brand admin-brand--sidebar" href="/admin" aria-label="Dashboard">
+            <svg class="admin-brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M32 5 50 23 46.5 26.5 32 12 17.5 26.5 14 23 32 5Z" />
+              <path d="m32 21 14 14-3.5 3.5L32 28 21.5 38.5 18 35l14-14Z" />
+              <path d="m32 31 11 11-3.5 3.5L32 38l-7.5 7.5L21 42l11-11Z" />
+              <path d="M29.5 17h5v35h-5z" />
+            </svg>
+            <span class="admin-brand__copy">
+              <strong>Ландшафт Парк</strong>
+              <span>Админ-панель</span>
+            </span>
+          </a>
+
+          <button class="admin-sidebar__close" type="button" aria-label="Закрыть меню" data-sidebar-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="admin-nav" aria-label="Навигация админ-панели">
+          <a class="admin-nav__item" href="/admin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+
+          <a class="admin-nav__item" href="/admin/requests">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+              <path d="M14 3v5h5M9 12h6M9 16h6" />
+            </svg>
+            <span>Заявки + Заказы</span>
+          </a>
+
+          <a class="admin-nav__item is-active" href="/admin/catalog" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+              <path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9" />
+            </svg>
+            <span>Каталог</span>
+            <i aria-hidden="true"></i>
+          </a>
+        </nav>
+
+        <div class="admin-sidebar__decoration" aria-hidden="true"></div>
+
+        <button class="admin-sidebar__logout" type="button" data-admin-logout>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" />
+            <path d="m14 8 4 4-4 4M18 12H8" />
+          </svg>
+          <span>Выйти</span>
+        </button>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <button class="admin-menu-button" type="button" aria-label="Открыть меню" data-sidebar-open>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </button>
+
+          <div class="admin-topbar__title">
+            <h1>Каталог</h1>
+            <p>Товары и категории магазина</p>
+          </div>
+
+          <div class="admin-profile">
+            <span class="admin-profile__avatar" data-admin-avatar>А</span>
+            <span class="admin-profile__copy">
+              <strong data-admin-name>Администратор</strong>
+              <small>Управление магазином</small>
+            </span>
+          </div>
+        </header>
+
+        <div class="admin-content admin-content--catalog">
+          <section class="admin-catalog-head">
+            <div>
+              <span class="admin-kicker">Каталог магазина</span>
+              <h2>Структура каталога</h2>
+              <p>Управляйте товарами, категориями, публикацией, вариантами, ценами и изображениями напрямую через Prisma.</p>
+            </div>
+
+            <div class="admin-catalog-head__actions">
+              <button class="admin-primary-button" type="button" data-catalog-create>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                <span data-catalog-create-label>Добавить товар</span>
+              </button>
+
+              <button class="admin-refresh-button" type="button" data-catalog-refresh>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20 6v5h-5M4 18v-5h5" />
+                  <path d="M6.1 9A7 7 0 0 1 18 6l2 5M4 13l2 5a7 7 0 0 0 11.9-3" />
+                </svg>
+                Обновить
+              </button>
+            </div>
+          </section>
+
+          <section class="admin-metrics admin-catalog-metrics" aria-label="Сводка каталога">
+            <article class="admin-metric-card">
+              <span class="admin-metric-card__label">Всего товаров</span>
+              <span class="admin-metric-card__ornament" aria-hidden="true"></span>
+              <strong data-metric-products>—</strong>
+            </article>
+
+            <article class="admin-metric-card">
+              <span class="admin-metric-card__label">Опубликовано</span>
+              <span class="admin-metric-card__ornament" aria-hidden="true"></span>
+              <strong data-metric-published>—</strong>
+            </article>
+
+            <article class="admin-metric-card">
+              <span class="admin-metric-card__label">Категорий</span>
+              <span class="admin-metric-card__ornament" aria-hidden="true"></span>
+              <strong data-metric-categories>—</strong>
+            </article>
+
+            <article class="admin-metric-card">
+              <span class="admin-metric-card__label">Активных вариантов</span>
+              <span class="admin-metric-card__ornament" aria-hidden="true"></span>
+              <strong data-metric-variants>—</strong>
+            </article>
+          </section>
+
+          <section class="admin-panel admin-catalog-panel">
+            <div class="admin-request-tabs" role="tablist" aria-label="Раздел каталога">
+              <button class="admin-request-tab is-active" type="button" data-catalog-view="PRODUCTS">
+                Товары <span data-count-products>—</span>
+              </button>
+              <button class="admin-request-tab" type="button" data-catalog-view="CATEGORIES">
+                Категории <span data-count-categories>—</span>
+              </button>
+            </div>
+
+            <div class="admin-request-filters admin-catalog-filters">
+              <label class="admin-request-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
+                <input
+                  type="search"
+                  placeholder="Название или slug"
+                  autocomplete="off"
+                  data-catalog-search
+                />
+              </label>
+
+              <label class="admin-request-select" data-category-filter-wrap>
+                <span>Категория</span>
+                <select data-category-filter>
+                  <option value="">Все категории</option>
+                </select>
+              </label>
+
+              <label class="admin-request-select">
+                <span>Публикация</span>
+                <select data-catalog-status>
+                  <option value="ALL">Все</option>
+                  <option value="PUBLISHED">Опубликовано</option>
+                  <option value="DRAFT">Скрыто</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="admin-catalog-results" data-catalog-results aria-busy="true">
+              <div class="admin-catalog-table-wrap" data-products-view>
+                <table class="admin-table admin-catalog-table" aria-label="Товары каталога">
+                  <thead>
+                    <tr>
+                      <th>Товар</th>
+                      <th>Категория</th>
+                      <th>Варианты</th>
+                      <th>Цена</th>
+                      <th>Статус</th>
+                      <th>Обновлён</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody data-products-body></tbody>
+                </table>
+              </div>
+
+              <div class="admin-catalog-table-wrap" data-categories-view hidden>
+                <table class="admin-table admin-catalog-table admin-catalog-table--categories" aria-label="Категории каталога">
+                  <thead>
+                    <tr>
+                      <th>Категория</th>
+                      <th>Slug</th>
+                      <th>Товары</th>
+                      <th>Опубликовано</th>
+                      <th>Порядок</th>
+                      <th>Статус</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody data-categories-body></tbody>
+                </table>
+              </div>
+
+              <div class="admin-requests-loading" data-catalog-loading>
+                <span></span>
+                Загружаем каталог…
+              </div>
+
+              <div class="admin-empty admin-catalog-empty" data-catalog-empty hidden>
+                <span class="admin-empty__icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24">
+                    <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+                    <path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9" />
+                  </svg>
+                </span>
+                <strong data-catalog-empty-title>Ничего не найдено</strong>
+                <p data-catalog-empty-copy>Попробуйте изменить фильтры или поисковый запрос.</p>
+                <button class="admin-primary-button admin-catalog-empty__action" type="button" data-catalog-empty-create>
+                  Добавить товар
+                </button>
+              </div>
+            </div>
+
+            <div class="admin-pagination">
+              <span data-pagination-info>—</span>
+              <div>
+                <button type="button" data-page-prev>Назад</button>
+                <button type="button" data-page-next>Вперёд</button>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="admin-footer">
+          <span aria-hidden="true"></span>
+          © Ландшафт Парк
+          <span aria-hidden="true"></span>
+        </footer>
+      </main>
+    </div>
+
+
+    <div class="admin-modal-overlay" data-category-modal-overlay></div>
+
+    <section class="admin-modal" data-category-modal aria-hidden="true" aria-labelledby="category-modal-title">
+      <div class="admin-modal__head">
+        <div>
+          <span class="admin-kicker">Категория</span>
+          <h2 id="category-modal-title" data-category-modal-title>Новая категория</h2>
+        </div>
+        <button class="admin-modal__close" type="button" aria-label="Закрыть" data-category-modal-close>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+
+      <form class="admin-modal__body admin-category-form" data-category-form novalidate>
+        <input type="hidden" data-category-id />
+
+        <div class="admin-form-grid admin-form-grid--2">
+          <label class="admin-form-field">
+            <span>Название *</span>
+            <input type="text" maxlength="120" required data-category-name />
+          </label>
+          <label class="admin-form-field">
+            <span>Slug *</span>
+            <input type="text" maxlength="120" required placeholder="trotuarnaya-plitka" data-category-slug />
+          </label>
+        </div>
+
+        <label class="admin-form-field">
+          <span>Описание</span>
+          <textarea rows="4" maxlength="3000" data-category-description></textarea>
+        </label>
+
+        <label class="admin-form-field">
+          <span>Путь к изображению категории</span>
+          <input type="text" maxlength="500" placeholder="/site/images/..." data-category-image-path />
+        </label>
+
+        <div class="admin-form-grid admin-form-grid--2">
+          <label class="admin-form-field">
+            <span>SEO title</span>
+            <input type="text" maxlength="180" data-category-seo-title />
+          </label>
+          <label class="admin-form-field">
+            <span>Порядок</span>
+            <input type="number" min="0" max="1000000" value="100" data-category-sort-order />
+          </label>
+        </div>
+
+        <label class="admin-form-field">
+          <span>SEO description</span>
+          <textarea rows="3" maxlength="320" data-category-seo-description></textarea>
+        </label>
+
+        <label class="admin-switch-row">
+          <span>
+            <strong>Опубликована</strong>
+            <small>Категория доступна на сайте.</small>
+          </span>
+          <input type="checkbox" checked data-category-published />
+          <i aria-hidden="true"></i>
+        </label>
+
+        <div class="admin-form-actions admin-form-actions--split">
+          <button class="admin-danger-button" type="button" hidden data-category-delete>Удалить категорию</button>
+          <div>
+            <button class="admin-secondary-button" type="button" data-category-cancel>Отмена</button>
+            <button class="admin-primary-button" type="submit" data-category-save>Сохранить</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <div class="admin-toast" data-admin-toast role="status" aria-live="polite"></div>
+
+    <script src="/site/scripts/admin/catalog.js" defer></script>
+  </body>
+</html>

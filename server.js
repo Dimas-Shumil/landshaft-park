@@ -15,6 +15,7 @@ const publicRouter = require('./routes/public.routes');
 const adminRouter = require('./routes/admin.routes');
 const authRouter = require('./routes/auth.routes');
 const adminApiRouter = require('./routes/admin-api.routes');
+const adminCatalogRouter = require('./routes/admin-catalog.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
 
 const app = express();
@@ -1139,6 +1140,7 @@ app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 // admin auth api
 
 app.use('/api/admin/auth', authRouter);
+app.use('/api/admin/catalog', adminCatalogRouter);
 app.use('/api/admin', adminApiRouter);
 
 // admin pages

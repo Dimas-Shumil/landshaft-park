@@ -281,27 +281,43 @@ async function seedProduct(productData, categoriesBySlug) {
   }
 
   /*
-   * Seed должен давать предсказуемый результат:
-   * удаляем текущие изображения этого seed-товара
-   * и создаём их заново в заданном порядке.
+   * ВАЖНО: seed больше не удаляет ProductImage товара.
+   * Админка сохраняет реальные изображения менеджера в эту же таблицу,
+   * поэтому deleteMany здесь мог бы уничтожить пользовательскую галерею.
    *
-   * Поэтому повторный npm run seed не создаёт дубли.
+   * Seed только добавляет недостающие dev-изображения по imagePath и
+   * обновляет их alt/sortOrder. Уже загруженные менеджером фото не трогаем.
    */
-  await prisma.productImage.deleteMany({
+  const existingImages = await prisma.productImage.findMany({
     where: {
       productId: product.id,
     },
+    select: {
+      imagePath: true,
+    },
   });
 
+  const existingPaths = new Set(
+    existingImages.map((image) => image.imagePath),
+  );
+  const productAlreadyHasImages = existingImages.length > 0;
+
   for (const [index, imagePath] of imagePaths.entries()) {
+    /*
+     * Ничего не обновляем у уже существующей записи ProductImage:
+     * менеджер мог поменять alt, порядок или главное фото через админку.
+     * Seed только добавляет отсутствующие dev-картинки.
+     */
+    if (existingPaths.has(imagePath)) {
+      continue;
+    }
+
     await prisma.productImage.create({
       data: {
         productId: product.id,
-
         imagePath,
         alt: productData.title,
-
-        isMain: index === 0,
+        isMain: !productAlreadyHasImages && index === 0,
         sortOrder: (index + 1) * 10,
       },
     });
@@ -311,6 +327,10 @@ async function seedProduct(productData, categoriesBySlug) {
 }
 
 async function main() {
+  if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
+    throw new Error('Seed отключён в production.');
+  }
+
   console.log('Seed: начало заполнения базы');
 
   const categoriesBySlug = await seedCategories();

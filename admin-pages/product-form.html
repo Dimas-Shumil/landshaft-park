@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <link rel="stylesheet" href="/site/css/admin.min.css" />
+    <title>Товар | Ландшафт Парк</title>
+  </head>
+
+  <body class="admin-page">
+    <div class="admin-layout">
+      <div class="admin-sidebar-overlay" data-sidebar-overlay></div>
+
+      <aside class="admin-sidebar" data-admin-sidebar>
+        <div class="admin-sidebar__top">
+          <a class="admin-brand admin-brand--sidebar" href="/admin" aria-label="Dashboard">
+            <svg class="admin-brand__mark" viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M32 5 50 23 46.5 26.5 32 12 17.5 26.5 14 23 32 5Z" />
+              <path d="m32 21 14 14-3.5 3.5L32 28 21.5 38.5 18 35l14-14Z" />
+              <path d="m32 31 11 11-3.5 3.5L32 38l-7.5 7.5L21 42l11-11Z" />
+              <path d="M29.5 17h5v35h-5z" />
+            </svg>
+            <span class="admin-brand__copy">
+              <strong>Ландшафт Парк</strong>
+              <span>Админ-панель</span>
+            </span>
+          </a>
+
+          <button class="admin-sidebar__close" type="button" aria-label="Закрыть меню" data-sidebar-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+          </button>
+        </div>
+
+        <nav class="admin-nav" aria-label="Навигация админ-панели">
+          <a class="admin-nav__item" href="/admin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+          </a>
+
+          <a class="admin-nav__item" href="/admin/requests">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+              <path d="M14 3v5h5M9 12h6M9 16h6" />
+            </svg>
+            <span>Заявки + Заказы</span>
+          </a>
+
+          <a class="admin-nav__item is-active" href="/admin/catalog" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+              <path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9" />
+            </svg>
+            <span>Каталог</span>
+            <i aria-hidden="true"></i>
+          </a>
+        </nav>
+
+        <div class="admin-sidebar__decoration" aria-hidden="true"></div>
+
+        <button class="admin-sidebar__logout" type="button" data-admin-logout>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" />
+            <path d="m14 8 4 4-4 4M18 12H8" />
+          </svg>
+          <span>Выйти</span>
+        </button>
+      </aside>
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <button class="admin-menu-button" type="button" aria-label="Открыть меню" data-sidebar-open>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
+
+          <div class="admin-topbar__title">
+            <h1 data-page-title>Новый товар</h1>
+            <p>Редактирование каталога</p>
+          </div>
+
+          <div class="admin-profile">
+            <span class="admin-profile__avatar" data-admin-avatar>А</span>
+            <span class="admin-profile__copy">
+              <strong data-admin-name>Администратор</strong>
+              <small>Управление магазином</small>
+            </span>
+          </div>
+        </header>
+
+        <div class="admin-content admin-product-editor">
+          <div class="admin-product-editor__head">
+            <a class="admin-back-link" href="/admin/catalog">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>
+              Назад в каталог
+            </a>
+
+            <div class="admin-product-editor__head-actions">
+              <a class="admin-secondary-button" href="#" target="_blank" rel="noopener" hidden data-public-link>Открыть на сайте</a>
+              <button class="admin-primary-button" type="button" data-save-top>Сохранить товар</button>
+            </div>
+          </div>
+
+          <div class="admin-product-editor__loading" data-editor-loading>
+            <span></span>
+            Загружаем товар…
+          </div>
+
+          <form class="admin-product-form" data-product-form novalidate hidden>
+            <div class="admin-product-form__main">
+              <section class="admin-panel admin-editor-card">
+                <div class="admin-editor-card__head">
+                  <div>
+                    <span class="admin-kicker">Основное</span>
+                    <h2>Карточка товара</h2>
+                  </div>
+                  <span class="admin-editor-id" data-product-id-label>Новый товар</span>
+                </div>
+
+                <div class="admin-form-grid admin-form-grid--2">
+                  <label class="admin-form-field">
+                    <span>Название *</span>
+                    <input type="text" maxlength="180" required data-product-title />
+                  </label>
+                  <label class="admin-form-field">
+                    <span>Slug *</span>
+                    <input type="text" maxlength="120" required placeholder="staryy-gorod" data-product-slug />
+                  </label>
+                </div>
+
+                <div class="admin-form-grid admin-form-grid--3">
+                  <label class="admin-form-field">
+                    <span>Категория *</span>
+                    <select required data-product-category></select>
+                  </label>
+                  <label class="admin-form-field">
+                    <span>Единица *</span>
+                    <input type="text" maxlength="40" value="м²" required data-product-unit />
+                  </label>
+                  <label class="admin-form-field">
+                    <span>Порядок</span>
+                    <input type="number" min="0" max="1000000" value="100" data-product-sort-order />
+                  </label>
+                </div>
+
+                <div class="admin-form-grid admin-form-grid--2">
+                  <label class="admin-form-field">
+                    <span>Размер / формат</span>
+                    <input type="text" maxlength="160" placeholder="60 / 90 / 120 мм" data-product-dimensions />
+                  </label>
+                  <label class="admin-form-field">
+                    <span>Назначение</span>
+                    <input type="text" maxlength="300" placeholder="Для двора и дорожек" data-product-purpose />
+                  </label>
+                </div>
+
+                <label class="admin-form-field">
+                  <span>Короткое описание</span>
+                  <textarea rows="3" maxlength="1000" data-product-short-description></textarea>
+                </label>
+
+                <label class="admin-form-field">
+                  <span>Полное описание</span>
+                  <textarea rows="8" maxlength="20000" data-product-description></textarea>
+                </label>
+              </section>
+
+              <section class="admin-panel admin-editor-card">
+                <div class="admin-editor-card__head admin-editor-card__head--actions">
+                  <div>
+                    <span class="admin-kicker">Варианты</span>
+                    <h2>Цены и характеристики</h2>
+                    <p>Цена варианта остаётся единственным источником цены для сайта и заказа.</p>
+                  </div>
+                  <button class="admin-secondary-button" type="button" data-add-variant>+ Добавить вариант</button>
+                </div>
+
+                <div class="admin-variant-list" data-variant-list></div>
+              </section>
+
+              <section class="admin-panel admin-editor-card">
+                <div class="admin-editor-card__head admin-editor-card__head--actions">
+                  <div>
+                    <span class="admin-kicker">Изображения</span>
+                    <h2>Галерея товара</h2>
+                    <p>JPEG, PNG или WebP до 8 МБ. Сервер автоматически конвертирует изображения в WebP.</p>
+                  </div>
+                  <label class="admin-upload-button">
+                    <input type="file" accept="image/jpeg,image/png,image/webp" multiple data-image-input />
+                    + Загрузить фото
+                  </label>
+                </div>
+
+                <div class="admin-image-dropzone" data-image-dropzone>
+                  <strong>Перетащите изображения сюда</strong>
+                  <span>или используйте кнопку «Загрузить фото»</span>
+                </div>
+
+                <div class="admin-image-grid" data-image-grid></div>
+                <div class="admin-image-empty" data-image-empty>Изображений пока нет. Новый товар сначала сохранится как черновик, после чего можно загрузить фото.</div>
+              </section>
+
+              <section class="admin-panel admin-editor-card">
+                <div class="admin-editor-card__head">
+                  <div>
+                    <span class="admin-kicker">SEO</span>
+                    <h2>Поисковое представление</h2>
+                  </div>
+                </div>
+
+                <label class="admin-form-field">
+                  <span>SEO title</span>
+                  <input type="text" maxlength="180" data-product-seo-title />
+                </label>
+                <label class="admin-form-field">
+                  <span>SEO description</span>
+                  <textarea rows="3" maxlength="320" data-product-seo-description></textarea>
+                </label>
+              </section>
+            </div>
+
+            <aside class="admin-product-form__side">
+              <section class="admin-panel admin-editor-card admin-editor-card--sticky">
+                <span class="admin-kicker">Публикация</span>
+                <h2>Статус товара</h2>
+
+                <label class="admin-switch-row admin-switch-row--card">
+                  <span>
+                    <strong>Опубликован</strong>
+                    <small>Товар виден посетителям и доступен для заказа.</small>
+                  </span>
+                  <input type="checkbox" data-product-published />
+                  <i aria-hidden="true"></i>
+                </label>
+
+                <div class="admin-editor-hint">
+                  Для публикации нужен хотя бы один активный вариант и минимум одно изображение.
+                </div>
+
+                <button class="admin-primary-button admin-primary-button--wide" type="submit" data-product-save>
+                  Сохранить изменения
+                </button>
+
+                <button class="admin-danger-button admin-danger-button--wide" type="button" hidden data-product-delete>
+                  Удалить товар
+                </button>
+              </section>
+            </aside>
+          </form>
+        </div>
+
+        <footer class="admin-footer">
+          <span aria-hidden="true"></span>
+          © Ландшафт Парк
+          <span aria-hidden="true"></span>
+        </footer>
+      </main>
+    </div>
+
+    <template data-variant-template>
+      <article class="admin-variant-card" data-variant-row>
+        <input type="hidden" data-variant-id />
+        <div class="admin-variant-card__head">
+          <strong data-variant-title>Вариант</strong>
+          <button class="admin-variant-remove" type="button" data-remove-variant>Удалить</button>
+        </div>
+        <div class="admin-form-grid admin-form-grid--3">
+          <label class="admin-form-field">
+            <span>Название *</span>
+            <input type="text" maxlength="120" value="Стандарт" required data-variant-name />
+          </label>
+          <label class="admin-form-field">
+            <span>SKU</span>
+            <input type="text" maxlength="120" data-variant-sku />
+          </label>
+          <label class="admin-form-field">
+            <span>Цена, ₽ *</span>
+            <input type="number" min="0" max="2000000000" step="1" required data-variant-price />
+          </label>
+        </div>
+        <div class="admin-form-grid admin-form-grid--4">
+          <label class="admin-form-field">
+            <span>Цвет</span>
+            <input type="text" maxlength="120" data-variant-color />
+          </label>
+          <label class="admin-form-field">
+            <span>Толщина, мм</span>
+            <input type="number" min="1" max="1000" step="1" data-variant-thickness />
+          </label>
+          <label class="admin-form-field">
+            <span>Порядок</span>
+            <input type="number" min="0" max="1000000" value="100" data-variant-sort-order />
+          </label>
+          <label class="admin-switch-row admin-switch-row--compact">
+            <span><strong>Активен</strong><small>Доступен на сайте</small></span>
+            <input type="checkbox" checked data-variant-active />
+            <i aria-hidden="true"></i>
+          </label>
+        </div>
+      </article>
+    </template>
+
+    <div class="admin-toast" data-admin-toast role="status" aria-live="polite"></div>
+    <script src="/site/scripts/admin/product-form.js" defer></script>
+  </body>
+</html>

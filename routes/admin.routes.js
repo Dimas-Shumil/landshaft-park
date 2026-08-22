@@ -54,4 +54,26 @@ router.get('/requests.html', (req, res) => {
   return res.redirect(308, '/admin/requests');
 });
 
+router.get('/catalog/product/new', requireAdminPage, (req, res) => {
+  return sendAdminPage(res, 'product-form.html');
+});
+
+router.get('/catalog/product/:id', requireAdminPage, (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return res.redirect('/admin/catalog');
+  }
+
+  return sendAdminPage(res, 'product-form.html');
+});
+
+router.get('/catalog', requireAdminPage, (req, res) => {
+  return sendAdminPage(res, 'catalog.html');
+});
+
+router.get('/catalog.html', (req, res) => {
+  return res.redirect(308, '/admin/catalog');
+});
+
 module.exports = router;
