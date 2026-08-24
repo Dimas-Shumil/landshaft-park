@@ -971,4 +971,35 @@ router.patch(
   },
 );
 
+router.delete(
+  '/requests/calculate/:id',
+  validateAdminWriteOrigin,
+  requireAdminCsrf,
+  async (req, res, next) => {
+    try {
+      const id = parsePositiveId(req.params.id);
+
+      if (!id) {
+        return res.status(400).json({ message: 'Некорректный ID заявки.' });
+      }
+
+      const exists = await prisma.calculateRequest.findUnique({
+        where: { id },
+        select: { id: true },
+      });
+
+      if (!exists) {
+        return res.status(404).json({ message: 'Заявка не найдена.' });
+      }
+
+      await prisma.calculateRequest.delete({ where: { id } });
+
+      res.set('Cache-Control', 'no-store');
+      return res.json({ ok: true });
+    } catch (error) {
+      return next(error);
+    }
+  },
+);
+
 module.exports = router;

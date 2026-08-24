@@ -117,7 +117,11 @@
 
   function formatActivityValue(item) {
     if (item.type === 'ORDER') {
-      return currencyFormatter.format(Number(item.estimatedTotal) || 0);
+      const estimatedTotal = Number(item.estimatedTotal);
+
+      return estimatedTotal > 0
+        ? `от ${currencyFormatter.format(estimatedTotal)}`
+        : 'Цена по запросу';
     }
 
     if (item.area === null || item.area === undefined) {

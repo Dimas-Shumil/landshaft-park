@@ -332,22 +332,16 @@
     deleteButton.addEventListener('click', async (event) => {
       event.stopPropagation();
 
-      if (item.type !== 'ORDER') {
-        showToast('Удаление заявок пока не добавлено.', 'error');
-        return;
-      }
-
-      const confirmed = window.confirm(`Удалить заказ ${item.publicNumber}?`);
+      const entityLabel = item.type === 'ORDER' ? 'заказ' : 'заявку';
+      const confirmed = window.confirm(
+        `Удалить ${entityLabel} ${item.publicNumber}? Это действие нельзя отменить.`,
+      );
 
       if (!confirmed) {
         return;
       }
 
-      await deleteOrder(item.id);
-    });
-    actionButton.addEventListener('click', (event) => {
-      event.stopPropagation();
-      openDetail(item.type, item.id);
+      await deleteRequestItem(item.type, item.id);
     });
     const actions = element('div', 'admin-row-actions');
 
@@ -1040,13 +1034,21 @@
     };
   }
 
-  async function deleteOrder(id) {
+  async function deleteRequestItem(type, id) {
+    const isOrder = type === 'ORDER';
+    const deleteError = isOrder
+      ? 'Не удалось удалить заказ.'
+      : 'Не удалось удалить заявку.';
+    const path = isOrder
+      ? `/api/admin/requests/orders/${id}`
+      : `/api/admin/requests/calculate/${id}`;
+
     try {
       if (!state.csrfToken) {
         await loadSession();
       }
 
-      const response = await fetch(`/api/admin/requests/orders/${id}`, {
+      const response = await fetch(path, {
         method: 'DELETE',
         headers: {
           Accept: 'application/json',
@@ -1057,15 +1059,15 @@
 
       if (!response.ok) {
         throw new Error(
-          await readResponseMessage(response, 'Не удалось удалить заказ.'),
+          await readResponseMessage(response, deleteError),
         );
       }
 
-      showToast('Заказ удалён.');
+      showToast(isOrder ? 'Заказ удалён.' : 'Заявка удалена.');
 
       if (
         state.currentDetail &&
-        state.currentDetail.type === 'ORDER' &&
+        state.currentDetail.type === type &&
         state.currentDetail.id === id
       ) {
         closeDetail();
@@ -1075,7 +1077,10 @@
         quiet: true,
       });
     } catch (error) {
-      showToast(error.message || 'Не удалось удалить заказ.', 'error');
+      showToast(
+        error.message || deleteError,
+        'error',
+      );
     }
   }
 

@@ -769,7 +769,8 @@
 }
 
 .product-state--error {
-  h1 {
+  h1,
+  h2 {
     margin-bottom: 14px;
 
     font-family: $oswald;

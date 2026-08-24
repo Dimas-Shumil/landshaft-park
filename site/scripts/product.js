@@ -335,7 +335,7 @@ function selectVariant(variant) {
 
   const hasPrice = Number(variant.price) > 0;
   priceElement.textContent = hasPrice
-    ? `${formatPrice(variant.price)} ₽`
+    ? `от ${formatPrice(variant.price)} ₽`
     : 'Цена по запросу';
   unitElement.hidden = !hasPrice;
 
@@ -361,20 +361,75 @@ function selectVariant(variant) {
       Number(button.dataset.variantId) === Number(variant.id),
     );
   });
+
+}
+
+function setMetaContent(attribute, name, content) {
+  let meta = document.head.querySelector(`meta[${attribute}="${name}"]`);
+
+  if (!meta) {
+    meta = document.createElement('meta');
+    meta.setAttribute(attribute, name);
+    document.head.append(meta);
+  }
+
+  meta.setAttribute('content', String(content || ''));
+}
+
+function getAbsoluteUrl(value, baseUrl) {
+  try {
+    return new URL(String(value || ''), baseUrl).href;
+  } catch {
+    return '';
+  }
 }
 
 function updateSeo(product) {
-  document.title = product.seo?.title || `${product.name} | Ландшафт Парк`;
+  const title = product.seo?.title || `${product.name} | Ландшафт Парк`;
+  const description =
+    product.seo?.description ||
+    product.shortDescription ||
+    `${product.name} — Ландшафт Парк`;
+  const canonical = product.seo?.canonical || window.location.href;
+  const mainImage = getMainImage(product);
+  const imageUrl = mainImage
+    ? getAbsoluteUrl(mainImage.path, canonical)
+    : '';
+
+  document.title = title;
 
   const metaDescription = document.querySelector('[data-product-description]');
 
   if (metaDescription) {
-    metaDescription.setAttribute(
-      'content',
-      product.seo?.description ||
-        product.shortDescription ||
-        `${product.name} — Ландшафт Парк`,
-    );
+    metaDescription.setAttribute('content', description);
+  }
+
+  let canonicalLink = document.head.querySelector('link[rel="canonical"]');
+
+  if (!canonicalLink) {
+    canonicalLink = document.createElement('link');
+    canonicalLink.rel = 'canonical';
+    document.head.append(canonicalLink);
+  }
+
+  canonicalLink.href = canonical;
+
+  setMetaContent('property', 'og:type', 'product');
+  setMetaContent('property', 'og:site_name', 'Ландшафт Парк');
+  setMetaContent('property', 'og:title', title);
+  setMetaContent('property', 'og:description', description);
+  setMetaContent('property', 'og:url', canonical);
+
+  if (imageUrl) {
+    setMetaContent('property', 'og:image', imageUrl);
+  }
+
+  setMetaContent('name', 'twitter:card', 'summary_large_image');
+  setMetaContent('name', 'twitter:title', title);
+  setMetaContent('name', 'twitter:description', description);
+
+  if (imageUrl) {
+    setMetaContent('name', 'twitter:image', imageUrl);
   }
 }
 
@@ -566,7 +621,7 @@ function renderProduct(product) {
 
   categoryElement.textContent = product.category?.name || '';
 
-  unitElement.textContent = `/ ${product.unit || 'шт.'}`;
+  unitElement.textContent = `/${product.unit || 'шт.'}`;
 
   if (product.shortDescription) {
     shortDescriptionElement.textContent = product.shortDescription;

@@ -10,6 +10,8 @@ const nodemailer = require('nodemailer');
 const { rateLimit } = require('express-rate-limit');
 const { z } = require('zod');
 const prisma = require('./lib/prisma');
+const { siteUrl, organization } = require('./config/site');
+const { getProductMeta } = require('./lib/seo');
 
 const publicRouter = require('./routes/public.routes');
 const adminRouter = require('./routes/admin.routes');
@@ -73,7 +75,7 @@ const smtpTransporter = isSmtpConfigured()
 
 // заявка на расчёт
 
-const CALCULATE_FORM_MIN_AGE_MS = 3_000;
+const CALCULATE_FORM_MIN_AGE_MS = isProduction ? 3_000 : 0;
 const CALCULATE_FORM_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 const CALCULATE_FORM_CHALLENGE_LIMIT = 5_000;
 const CALCULATE_DUPLICATE_WINDOW_MS = 10 * 60 * 1000;
@@ -183,6 +185,7 @@ const orderItemSchema = z.object({
 });
 
 const orderSchema = z.object({
+  idempotencyKey: z.string().uuid(),
   customer: z.object({
     name: z
       .string()
@@ -368,6 +371,10 @@ function getRequestUserAgent(req) {
     .slice(0, 500);
 }
 
+function createPublicUrl(pathname) {
+  return new URL(String(pathname || '/'), `${siteUrl}/`).href;
+}
+
 function escapeHtml(value) {
   const symbols = {
     '&': '&amp;',
@@ -435,6 +442,14 @@ function acceptRequestSilently(res) {
     ok: true,
     message: 'Заявка отправлена',
   });
+}
+
+function rejectSpamRequest(res, message) {
+  if (isProduction) {
+    return acceptRequestSilently(res);
+  }
+
+  return res.status(409).json({ message });
 }
 
 function buildCalculateEmailText(request) {
@@ -846,7 +861,13 @@ function formatOrderNumber(value) {
 }
 
 function formatOrderMoney(value) {
-  return `${formatOrderNumber(value)} ₽`;
+  const number = Number(value);
+
+  if (!Number.isFinite(number) || number <= 0) {
+    return 'Цена по запросу';
+  }
+
+  return `от ${formatOrderNumber(number)} ₽`;
 }
 
 function getFulfillmentMethodLabel(value) {
@@ -1118,6 +1139,48 @@ if (isProduction) {
 
 app.disable('x-powered-by');
 
+app.use((req, res, next) => {
+  res.locals.cspNonce = crypto.randomBytes(18).toString('base64');
+
+  if (req.path.startsWith('/api/') || req.path.startsWith('/admin')) {
+    res.set('X-Robots-Tag', 'noindex, nofollow, noarchive');
+  }
+
+  if (isProduction) {
+    const canonicalUrl = new URL(siteUrl);
+    const forwardedHost = String(
+      req.get('x-forwarded-host') || req.get('host') || '',
+    )
+      .split(',')[0]
+      .trim()
+      .toLowerCase();
+    const forwardedProto = String(
+      req.get('x-forwarded-proto') || req.protocol || '',
+    )
+      .split(',')[0]
+      .trim()
+      .toLowerCase();
+    const requestHostname = forwardedHost.split(':')[0];
+    const isPublicHost = ['landshaftpark.ru', 'www.landshaftpark.ru'].includes(
+      requestHostname,
+    );
+
+    if (
+      isPublicHost &&
+      (forwardedProto !== canonicalUrl.protocol.replace(':', '') ||
+        forwardedHost !== canonicalUrl.host)
+    ) {
+      const redirectStatus = ['GET', 'HEAD'].includes(req.method) ? 301 : 308;
+      return res.redirect(
+        redirectStatus,
+        new URL(req.originalUrl || '/', `${siteUrl}/`).href,
+      );
+    }
+  }
+
+  return next();
+});
+
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -1129,7 +1192,10 @@ app.use(
         frameAncestors: ["'self'"],
         imgSrc: ["'self'", 'data:'],
         objectSrc: ["'none'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: [
+          "'self'",
+          (req, res) => `'nonce-${res.locals.cspNonce}'`,
+        ],
         styleSrc: ["'self'"],
         upgradeInsecureRequests: isProduction ? [] : null,
       },
@@ -1160,6 +1226,37 @@ app.use(
 );
 
 // static
+
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
+app.get('/catalog.html', (req, res) => res.redirect(301, '/catalog'));
+app.get('/contacts.html', (req, res) => res.redirect(301, '/contacts'));
+app.get('/cart.html', (req, res) => res.redirect(301, '/cart'));
+app.get('/product.html', (req, res) => {
+  const slug = String(req.query.slug || '').trim();
+  const location = slug
+    ? `/product?slug=${encodeURIComponent(slug)}`
+    : '/catalog';
+
+  res.redirect(301, location);
+});
+
+app.use((req, res, next) => {
+  const canonicalPaths = ['/catalog', '/contacts', '/cart', '/product'];
+  const pathname = req.path.replace(/\/+$/, '');
+
+  if (
+    ['GET', 'HEAD'].includes(req.method) &&
+    req.path.endsWith('/') &&
+    canonicalPaths.includes(pathname)
+  ) {
+    const queryIndex = req.originalUrl.indexOf('?');
+    const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : '';
+
+    return res.redirect(301, `${pathname}${query}`);
+  }
+
+  return next();
+});
 
 app.use('/site/css', express.static(path.join(__dirname, 'site', 'css')));
 app.use('/site/fonts', express.static(path.join(__dirname, 'site', 'fonts')));
@@ -1439,6 +1536,8 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
       });
     }
 
+    const productMeta = getProductMeta(product);
+
     return res.json({
       ok: true,
 
@@ -1455,8 +1554,18 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
         purpose: product.purpose,
 
         seo: {
-          title: product.seoTitle,
-          description: product.seoDescription,
+          title: productMeta.title,
+          description: productMeta.description,
+          canonical: productMeta.canonical,
+        },
+
+        organization: {
+          name: organization.name,
+          legalName: organization.legalName,
+          url: siteUrl,
+          email: organization.email,
+          phones: organization.phones,
+          address: organization.address,
         },
 
         category: product.category,
@@ -1512,7 +1621,7 @@ app.post(
       if (company) {
         console.warn(`Антиспам: заполнена ловушка, IP: ${ipAddress}`);
 
-        return acceptRequestSilently(res);
+        return rejectSpamRequest(res, 'Форма не прошла антиспам-проверку.');
       }
 
       const parsed = calculateRequestSchema.safeParse(req.body);
@@ -1548,7 +1657,10 @@ app.post(
             `IP: ${ipAddress}`,
         );
 
-        return acceptRequestSilently(res);
+        return rejectSpamRequest(
+          res,
+          'Форма была отправлена слишком быстро. Попробуйте ещё раз.',
+        );
       }
 
       const spamScore = calculateRequestSpamScore(parsed.data);
@@ -1560,7 +1672,7 @@ app.post(
           `Антиспам: рекламный текст, score=${spamScore}, IP: ${ipAddress}`,
         );
 
-        return acceptRequestSilently(res);
+        return rejectSpamRequest(res, 'Текст не прошёл антиспам-проверку.');
       }
 
       const duplicateFingerprint = createCalculateRequestFingerprint({
@@ -1592,7 +1704,10 @@ app.post(
 
         console.warn(`Антиспам: повтор заявки, IP: ${ipAddress}`);
 
-        return acceptRequestSilently(res);
+        return rejectSpamRequest(
+          res,
+          'Такая заявка уже отправлялась недавно.',
+        );
       }
 
       consumeCalculateFormChallenge(parsed.data.formToken);
@@ -1664,6 +1779,8 @@ app.post(
   orderLimiter,
   validateRequestOrigin,
   async (req, res, next) => {
+    let submittedIdempotencyKey = '';
+
     try {
       const parsed = orderSchema.safeParse(req.body);
 
@@ -1673,8 +1790,35 @@ app.post(
         });
       }
 
+      submittedIdempotencyKey = parsed.data.idempotencyKey;
+
+      const existingOrder = await prisma.order.findUnique({
+        where: {
+          idempotencyKey: submittedIdempotencyKey,
+        },
+        select: {
+          publicNumber: true,
+          estimatedTotal: true,
+        },
+      });
+
+      if (existingOrder) {
+        return res.status(200).json({
+          ok: true,
+          message: 'Заказ уже был принят.',
+          order: existingOrder,
+        });
+      }
+
       if (parsed.data.company) {
         console.warn(`Антиспам заказа: заполнена ловушка, IP: ${getRequestIp(req)}`);
+
+        if (!isProduction) {
+          return res.status(409).json({
+            message: 'Форма заказа не прошла антиспам-проверку.',
+          });
+        }
+
         return res.status(201).json({
           ok: true,
           message: 'Заказ принят',
@@ -1703,6 +1847,13 @@ app.post(
         console.warn(
           `Антиспам заказа: рекламный текст, score=${spamScore}, IP: ${getRequestIp(req)}`,
         );
+
+        if (!isProduction) {
+          return res.status(409).json({
+            message: 'Текст заказа не прошёл антиспам-проверку.',
+          });
+        }
+
         return res.status(201).json({
           ok: true,
           message: 'Заказ принят',
@@ -1845,7 +1996,7 @@ app.post(
         return tx.order.create({
           data: {
             publicNumber: createOrderPublicNumber(),
-            idempotencyKey: crypto.randomUUID(),
+            idempotencyKey: submittedIdempotencyKey,
 
             customerName: customer.name,
             phone,
@@ -1934,6 +2085,30 @@ app.post(
         },
       });
     } catch (error) {
+      if (error?.code === 'P2002' && submittedIdempotencyKey) {
+        try {
+          const existingOrder = await prisma.order.findUnique({
+            where: {
+              idempotencyKey: submittedIdempotencyKey,
+            },
+            select: {
+              publicNumber: true,
+              estimatedTotal: true,
+            },
+          });
+
+          if (existingOrder) {
+            return res.status(200).json({
+              ok: true,
+              message: 'Заказ уже был принят.',
+              order: existingOrder,
+            });
+          }
+        } catch (lookupError) {
+          return next(lookupError);
+        }
+      }
+
       return next(error);
     }
   },

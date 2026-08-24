@@ -2,6 +2,8 @@
 
 (() => {
   const CART_PAGE_STORAGE_KEY = 'landshaftParkCart';
+  const ORDER_IDEMPOTENCY_STORAGE_KEY =
+    'landshaftParkOrderIdempotencyKey';
 
   const cartContent = document.querySelector('[data-cart-content]');
   const cartItemsElement = document.querySelector('[data-cart-items]');
@@ -36,6 +38,33 @@
 
   function formatPrice(value) {
     return new Intl.NumberFormat('ru-RU').format(Number(value) || 0);
+  }
+
+  function createUuid() {
+    if (typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const value = [...bytes]
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+
+    return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+  }
+
+  function getOrderIdempotencyKey() {
+    const storedKey = sessionStorage.getItem(ORDER_IDEMPOTENCY_STORAGE_KEY);
+
+    if (storedKey) {
+      return storedKey;
+    }
+
+    const key = createUuid();
+    sessionStorage.setItem(ORDER_IDEMPOTENCY_STORAGE_KEY, key);
+    return key;
   }
 
   function escapeHtml(value) {
@@ -305,8 +334,8 @@
           }
 
           <div class="cart-item__price">
-            <span>${hasPrice ? `${formatPrice(item.price)} ₽/${unit}` : 'Цена по запросу'}</span>
-            <strong>${hasPrice ? `${formatPrice(lineTotal)} ₽` : 'Менеджер рассчитает'}</strong>
+            <span>${hasPrice ? `от ${formatPrice(item.price)} ₽/${unit}` : 'Цена по запросу'}</span>
+            <strong>${hasPrice ? `от ${formatPrice(lineTotal)} ₽` : 'Менеджер рассчитает'}</strong>
           </div>
         </div>
       </div>
@@ -329,7 +358,7 @@
       ? total > 0
         ? `от ${formatPrice(total)} ₽ + расчёт`
         : 'Цена по запросу'
-      : `${formatPrice(total)} ₽`;
+      : `от ${formatPrice(total)} ₽`;
   }
 
   function renderCart() {
@@ -449,6 +478,7 @@
     );
 
     const payload = {
+      idempotencyKey: getOrderIdempotencyKey(),
       customer: {
         name: String(formData.get('name') || '').trim(),
         phone: String(formData.get('phone') || '').trim(),
@@ -509,10 +539,11 @@
           ? estimatedTotal > 0
             ? `от ${formatPrice(estimatedTotal)} ₽ + расчёт`
             : 'Цена по запросу'
-          : `${formatPrice(estimatedTotal)} ₽`;
+          : `от ${formatPrice(estimatedTotal)} ₽`;
       }
 
       localStorage.removeItem(CART_PAGE_STORAGE_KEY);
+      sessionStorage.removeItem(ORDER_IDEMPOTENCY_STORAGE_KEY);
       window.dispatchEvent(new Event('cart:updated'));
 
       renderCart();

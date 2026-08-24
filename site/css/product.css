@@ -1436,7 +1436,8 @@ html {
   display: none;
 }
 
-.product-state--error h1 {
+.product-state--error h1,
+.product-state--error h2 {
   margin-bottom: 14px;
   font-family: "Oswald", Arial, sans-serif;
   font-size: 48px;
