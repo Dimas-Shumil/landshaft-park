@@ -199,6 +199,10 @@
 
   function formatPriceRange(item) {
     if (item.minPrice === null || item.minPrice === undefined) return 'Цена не задана';
+    if (Number(item.maxPrice ?? item.minPrice) <= 0) return 'Цена по запросу';
+    if (Number(item.minPrice) <= 0 && Number(item.maxPrice) > 0) {
+      return `от ${formatCurrency(item.maxPrice)} / ${item.unit || 'шт.'}`;
+    }
     if (item.maxPrice !== null && item.maxPrice !== item.minPrice) {
       return `${formatCurrency(item.minPrice)} – ${formatCurrency(item.maxPrice)}`;
     }

@@ -95,6 +95,20 @@ function initHeader() {
   window.addEventListener('scroll', handleHeaderScroll, { passive: true });
 }
 
+function initCurrentNavigation() {
+  const currentPath = window.location.pathname.replace(/\/$/, '') || '/';
+
+  document.querySelectorAll('.header__nav a, .mobile-menu__nav a').forEach((link) => {
+    const linkUrl = new URL(link.href, window.location.origin);
+    const linkPath = linkUrl.pathname.replace(/\/$/, '') || '/';
+
+    if (linkPath === currentPath && !linkUrl.hash) {
+      link.classList.add('is-current');
+      link.setAttribute('aria-current', 'page');
+    }
+  });
+}
+
 function initHero() {
   const hero = document.querySelector('.hero');
 
@@ -107,7 +121,8 @@ function initHero() {
 
 function initSectionAnimations() {
   const sections = document.querySelectorAll(
-    '.categories, .products, .desicion, .advantages, .production, .calculate',
+    '.categories, .products, .desicion, .advantages, .production, .calculate, ' +
+      '[data-animate-section]',
   );
 
   if (!sections.length) return;
@@ -252,6 +267,7 @@ function addPopularProductToCart(product, variant, button) {
       name: product.name,
       variantName: variant.name,
       color: variant.color,
+      colorHex: variant.colorHex,
       thickness: variant.thickness,
       image: product.image?.path || '',
       price: variant.price,
@@ -298,7 +314,8 @@ function createPopularProductCard(product) {
       ? `${escapeHtml(variant.thickness)} мм`
       : 'Толщина уточняется';
 
-  const color = escapeHtml(variant.color || 'Цвет уточняется');
+  const color = variant.color ? escapeHtml(variant.color) : '';
+  const variantMeta = [thickness, color].filter(Boolean).join(' • ');
   const size = escapeHtml(product.size || 'Размер уточняется');
   const purpose = escapeHtml(product.purpose || 'Назначение уточняется');
   const unit = escapeHtml(product.unit || 'шт.');
@@ -321,7 +338,7 @@ function createPopularProductCard(product) {
         <a href="/product?slug=${productSlug}">${productName}</a>
       </h3>
 
-      <p class="product-card__subtitle">${thickness} • ${color}</p>
+      <p class="product-card__subtitle">${variantMeta}</p>
 
       <ul class="product-card__list">
         <li>${size}</li>
@@ -329,7 +346,7 @@ function createPopularProductCard(product) {
       </ul>
 
       <div class="product-card__price">
-        от ${formatProductPrice(Number(variant.price))} ₽/${unit}
+        ${Number(variant.price) > 0 ? `от ${formatProductPrice(Number(variant.price))} ₽/${unit}` : 'Цена по запросу'}
       </div>
 
       <button class="product-card__button" type="button">
@@ -417,7 +434,9 @@ function initCalculateForm() {
 
   if (!form) return;
 
-  const submitButton = form.querySelector('.calculate-form__button');
+  const submitButton = form.querySelector(
+    '[data-calculate-submit], .calculate-form__button',
+  );
 
   if (!submitButton) return;
 
@@ -597,6 +616,7 @@ async function initApp() {
   await loadComponents();
 
   initHeader();
+  initCurrentNavigation();
   initGlobalCartCounter();
   initHero();
   initSectionAnimations();

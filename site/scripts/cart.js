@@ -190,6 +190,7 @@
     const variantMeta = getVariantMeta(item);
     const lineTotal = getLineTotal(item);
     const areaPricing = usesAreaPricing(item);
+    const hasPrice = Number(item.price) > 0;
 
     article.className = 'cart-item';
     article.dataset.cartItemKey = itemKey;
@@ -304,8 +305,8 @@
           }
 
           <div class="cart-item__price">
-            <span>${formatPrice(item.price)} ₽/${unit}</span>
-            <strong>${formatPrice(lineTotal)} ₽</strong>
+            <span>${hasPrice ? `${formatPrice(item.price)} ₽/${unit}` : 'Цена по запросу'}</span>
+            <strong>${hasPrice ? `${formatPrice(lineTotal)} ₽` : 'Менеджер рассчитает'}</strong>
           </div>
         </div>
       </div>
@@ -320,10 +321,15 @@
     }, 0);
 
     const total = cart.reduce((sum, item) => sum + getLineTotal(item), 0);
+    const hasRequestPrice = cart.some((item) => Number(item.price) <= 0);
 
     linesElement.textContent = String(cart.length);
     quantityElement.textContent = String(totalQuantity);
-    totalElement.textContent = `${formatPrice(total)} ₽`;
+    totalElement.textContent = hasRequestPrice
+      ? total > 0
+        ? `от ${formatPrice(total)} ₽ + расчёт`
+        : 'Цена по запросу'
+      : `${formatPrice(total)} ₽`;
   }
 
   function renderCart() {
@@ -455,6 +461,7 @@
         personalDataConsent:
           formData.get('personalDataConsent') === 'on',
       },
+      company: String(formData.get('company') || '').trim(),
       items: cart.map((item) => ({
         variantId: Number(item.variantId),
         quantity: usesAreaPricing(item) ? 1 : normalizeQuantity(item.quantity),
@@ -497,9 +504,12 @@
       }
 
       if (orderTotalElement) {
-        orderTotalElement.textContent = `${formatPrice(
-          data.order?.estimatedTotal,
-        )} ₽`;
+        const estimatedTotal = Number(data.order?.estimatedTotal) || 0;
+        orderTotalElement.textContent = cart.some((item) => Number(item.price) <= 0)
+          ? estimatedTotal > 0
+            ? `от ${formatPrice(estimatedTotal)} ₽ + расчёт`
+            : 'Цена по запросу'
+          : `${formatPrice(estimatedTotal)} ₽`;
       }
 
       localStorage.removeItem(CART_PAGE_STORAGE_KEY);

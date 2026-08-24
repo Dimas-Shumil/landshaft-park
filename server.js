@@ -20,8 +20,19 @@ const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
 
 const app = express();
 
-const HOST = process.env.HOST || '127.0.0.1';
-const PORT = Number(process.env.PORT) || 3000;
+function getCommandLineOption(name) {
+  const optionIndex = process.argv.indexOf(name);
+
+  if (optionIndex === -1) {
+    return '';
+  }
+
+  return String(process.argv[optionIndex + 1] || '').trim();
+}
+
+const HOST = process.env.HOST || getCommandLineOption('--host') || '127.0.0.1';
+const PORT =
+  Number(process.env.PORT || getCommandLineOption('--port')) || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
 // smtp
@@ -185,6 +196,7 @@ const orderSchema = z.object({
     deliveryAddress: z.string().trim().max(500).optional().default(''),
     personalDataConsent: z.literal(true),
   }),
+  company: z.string().trim().max(200).optional().default(''),
   items: z.array(orderItemSchema).min(1).max(ORDER_MAX_ITEMS),
 });
 
@@ -366,6 +378,17 @@ function escapeHtml(value) {
   };
 
   return String(value ?? '').replace(/[&<>"']/g, (symbol) => symbols[symbol]);
+}
+
+function getPublicVariantColor(variant) {
+  const color = String(variant?.color || '').trim();
+  const colorHex = String(variant?.colorHex || '').trim().toLowerCase();
+
+  if (!color || !/^#[0-9a-f]{6}$/.test(colorHex)) {
+    return { color: '', colorHex: null };
+  }
+
+  return { color, colorHex };
 }
 
 function cleanMailHeader(value) {
@@ -1252,6 +1275,7 @@ app.get('/api/catalog/products', async (req, res, next) => {
             sku: true,
 
             color: true,
+            colorHex: true,
             thicknessMm: true,
             price: true,
 
@@ -1296,17 +1320,18 @@ app.get('/api/catalog/products', async (req, res, next) => {
         order: product.sortOrder,
         minPrice,
 
-        variants: product.variants.map((variant) => ({
-          id: variant.id,
-          name: variant.name,
-          sku: variant.sku,
-
-          color: variant.color,
-          thickness: variant.thicknessMm,
-          price: variant.price,
-
-          order: variant.sortOrder,
-        })),
+        variants: product.variants.map((variant) => {
+          const publicColor = getPublicVariantColor(variant);
+          return {
+            id: variant.id,
+            name: variant.name,
+            sku: variant.sku,
+            ...publicColor,
+            thickness: variant.thicknessMm,
+            price: variant.price,
+            order: variant.sortOrder,
+          };
+        }),
       };
     });
 
@@ -1399,6 +1424,7 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
             name: true,
             sku: true,
             color: true,
+            colorHex: true,
             thicknessMm: true,
             price: true,
             sortOrder: true,
@@ -1443,17 +1469,18 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
           order: image.sortOrder,
         })),
 
-        variants: product.variants.map((variant) => ({
-          id: variant.id,
-          name: variant.name,
-          sku: variant.sku,
-
-          color: variant.color,
-          thickness: variant.thicknessMm,
-          price: variant.price,
-
-          order: variant.sortOrder,
-        })),
+        variants: product.variants.map((variant) => {
+          const publicColor = getPublicVariantColor(variant);
+          return {
+            id: variant.id,
+            name: variant.name,
+            sku: variant.sku,
+            ...publicColor,
+            thickness: variant.thicknessMm,
+            price: variant.price,
+            order: variant.sortOrder,
+          };
+        }),
       },
     });
   } catch (error) {
@@ -1646,6 +1673,15 @@ app.post(
         });
       }
 
+      if (parsed.data.company) {
+        console.warn(`Антиспам заказа: заполнена ловушка, IP: ${getRequestIp(req)}`);
+        return res.status(201).json({
+          ok: true,
+          message: 'Заказ принят',
+          order: { publicNumber: createOrderPublicNumber(), estimatedTotal: 0 },
+        });
+      }
+
       const customer = parsed.data.customer;
       const phone = normalizeRussianPhone(customer.phone);
 
@@ -1658,6 +1694,19 @@ app.post(
       if (!isValidCustomerName(customer.name)) {
         return res.status(400).json({
           message: 'Введите корректное имя без цифр и ссылок.',
+        });
+      }
+
+
+      const spamScore = calculateRequestSpamScore(customer);
+      if (spamScore >= CALCULATE_SPAM_SCORE_LIMIT) {
+        console.warn(
+          `Антиспам заказа: рекламный текст, score=${spamScore}, IP: ${getRequestIp(req)}`,
+        );
+        return res.status(201).json({
+          ok: true,
+          message: 'Заказ принят',
+          order: { publicNumber: createOrderPublicNumber(), estimatedTotal: 0 },
         });
       }
 

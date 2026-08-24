@@ -417,8 +417,8 @@
     border: 2px solid rgba($color-primary-dark, 0.08);
     border-radius: 50%;
 
-    background-color: var(--swatch, #777);
-    background-image: none;
+    overflow: hidden;
+    background-color: #777777;
 
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 
@@ -426,6 +426,12 @@
       border-color 0.2s ease,
       transform 0.2s ease,
       box-shadow 0.2s ease;
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
   }
 
   &:hover span {

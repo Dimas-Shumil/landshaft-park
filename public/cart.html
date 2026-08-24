@@ -57,7 +57,7 @@
 
             <div class="cart-summary__total">
               <span>Промежуточный итог</span>
-              <strong data-cart-total>0 ₽</strong>
+              <strong data-cart-total>—</strong>
             </div>
 
             <p class="cart-summary__note">
@@ -90,7 +90,12 @@
           <a href="/catalog">Перейти в каталог</a>
         </section>
 
-        <section class="cart-checkout" id="checkout" data-checkout-section hidden>
+        <section
+          class="cart-checkout"
+          id="checkout"
+          data-checkout-section
+          hidden
+        >
           <div class="cart-checkout__top">
             <div>
               <p class="cart-checkout__eyebrow">Следующий шаг</p>
@@ -108,13 +113,22 @@
           </div>
 
           <p class="cart-checkout__text">
-            Укажите контакты и способ получения. Предварительная стоимость
-            будет пересчитана сервером по актуальным ценам из каталога.
-            Наличие, необходимое количество, доставку и итоговую стоимость
-            подтвердит менеджер.
+            Укажите контакты и способ получения. Предварительная стоимость будет
+            пересчитана сервером по актуальным ценам из каталога. Наличие,
+            необходимое количество, доставку и итоговую стоимость подтвердит
+            менеджер.
           </p>
 
           <form class="cart-checkout__form" data-order-form novalidate>
+            <label hidden aria-hidden="true">
+              Сайт
+              <input
+                type="text"
+                name="company"
+                tabindex="-1"
+                autocomplete="off"
+              />
+            </label>
             <div class="cart-checkout__grid">
               <label class="cart-checkout__field">
                 <span>Имя</span>
@@ -194,10 +208,15 @@
             <label class="cart-checkout__consent">
               <input type="checkbox" name="personalDataConsent" required />
               <span>
-                Я согласен на обработку персональных данных и принимаю
-                <a href="/privacy-policy.html" target="_blank" rel="noopener">
-                  политику конфиденциальности
-                </a>.
+                Я даю согласие на обработку персональных данных в целях расчёта
+                стоимости и обратной связи, а также подтверждаю ознакомление с
+                <a href="/personal-data-consent.html" target="_blank">
+                  согласием на обработку персональных данных
+                </a>
+                и
+                <a href="/privacy-policy.html" target="_blank">
+                  политикой конфиденциальности </a
+                >.
               </span>
             </label>
 

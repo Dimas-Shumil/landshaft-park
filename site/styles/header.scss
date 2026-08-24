@@ -135,6 +135,15 @@
         transform-origin: left;
       }
     }
+
+    &.is-current {
+      color: $color-primary;
+
+      &::after {
+        transform: scaleX(1);
+        transform-origin: left;
+      }
+    }
   }
 }
 
@@ -366,6 +375,10 @@
     &:hover {
       color: $color-primary;
       transform: translateX(8px);
+    }
+
+    &.is-current {
+      color: $color-primary;
     }
   }
 }

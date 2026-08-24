@@ -64,6 +64,7 @@ const INITIAL_PRODUCTS = [
     variant: {
       name: 'Стандарт',
       color: 'Серый',
+      colorHex: '#8f8b82',
       thicknessMm: 60,
       price: 1250,
     },
@@ -86,6 +87,7 @@ const INITIAL_PRODUCTS = [
     variant: {
       name: 'Стандарт',
       color: 'Коричневый',
+      colorHex: '#735444',
       thicknessMm: 60,
       price: 1150,
     },
@@ -108,6 +110,7 @@ const INITIAL_PRODUCTS = [
     variant: {
       name: 'Стандарт',
       color: 'Серый',
+      colorHex: '#8f8b82',
       thicknessMm: 60,
       price: 1190,
     },
@@ -130,6 +133,7 @@ const INITIAL_PRODUCTS = [
     variant: {
       name: 'Стандарт',
       color: 'Графит',
+      colorHex: '#414344',
       thicknessMm: 60,
       price: 1290,
     },
@@ -245,6 +249,7 @@ async function seedProduct(productData, categoriesBySlug) {
         name: productData.variant.name,
 
         color: productData.variant.color,
+        colorHex: productData.variant.colorHex,
         thicknessMm: productData.variant.thicknessMm,
         price: productData.variant.price,
 
@@ -261,6 +266,7 @@ async function seedProduct(productData, categoriesBySlug) {
         sku: null,
 
         color: productData.variant.color,
+        colorHex: productData.variant.colorHex,
         thicknessMm: productData.variant.thicknessMm,
         price: productData.variant.price,
 

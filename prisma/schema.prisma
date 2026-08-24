@@ -21,6 +21,7 @@ enum CalculateRequestStatus {
 
 enum OrderStatus {
   NEW
+  IN_PROGRESS
   CONFIRMED
   COMPLETED
   CANCELLED
@@ -137,6 +138,7 @@ model ProductVariant {
   sku  String? @unique
 
   color       String @default("")
+  colorHex    String?
   thicknessMm Int?
 
   price Int

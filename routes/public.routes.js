@@ -22,4 +22,8 @@ router.get('/cart', (req, res) => {
   res.sendFile(path.join(publicDir, 'cart.html'));
 });
 
+router.get('/contacts', (req, res) => {
+  res.sendFile(path.join(publicDir, 'contacts.html'));
+});
+
 module.exports = router;

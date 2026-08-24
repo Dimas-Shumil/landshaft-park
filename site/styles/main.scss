@@ -2308,6 +2308,13 @@
   line-height: 1.5;
 
   color: $color-text-muted;
+
+  a {
+    color: $color-primary;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
 }
 
 .calculate-form__delivery input,

@@ -260,6 +260,13 @@ html {
   transform: scaleX(1);
   transform-origin: left;
 }
+.header__nav a.is-current {
+  color: #2f4a2f;
+}
+.header__nav a.is-current::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
 
 .header__actions {
   display: flex;
@@ -426,6 +433,9 @@ html {
 .mobile-menu__nav a:hover {
   color: #2f4a2f;
   transform: translateX(8px);
+}
+.mobile-menu__nav a.is-current {
+  color: #2f4a2f;
 }
 
 .mobile-menu__bottom {
@@ -1165,10 +1175,15 @@ html {
   height: 34px;
   border: 2px solid rgba(31, 51, 31, 0.08);
   border-radius: 50%;
-  background-color: var(--swatch, #777);
-  background-image: none;
+  overflow: hidden;
+  background-color: #777777;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.catalog-color span svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .catalog-color:hover span {
   transform: translateY(-1px);

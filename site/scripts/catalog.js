@@ -17,11 +17,17 @@ const categoryFiltersContainer = document.querySelector(
 let categoryTabs = [];
 
 const colorFiltersContainer = document.querySelector('[data-color-filters]');
+const colorFilterSection = colorFiltersContainer?.closest('.catalog-filter');
+const thicknessFiltersContainer = document.querySelector(
+  '[data-thickness-filters]',
+);
 
 const priceMinInput = document.querySelector('[data-price-min]');
 const priceMaxInput = document.querySelector('[data-price-max]');
 const rangeMinInput = document.querySelector('[data-range-min]');
 const rangeMaxInput = document.querySelector('[data-range-max]');
+const priceScaleMin = document.querySelector('[data-price-scale-min]');
+const priceScaleMax = document.querySelector('[data-price-scale-max]');
 
 const filterPanel = document.querySelector('[data-filter-panel]');
 const filterOverlay = document.querySelector('[data-filter-overlay]');
@@ -42,48 +48,13 @@ function getPriceLabel(value, unit) {
   return `от ${formatPrice(value)} ₽/${unit}`;
 }
 
-function getColorHex(color) {
-  const normalizedColor = String(color ?? '')
-    .trim()
-    .toLowerCase();
+function getSafeColorHex(value) {
+  const colorHex = String(value ?? '').trim().toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(colorHex) ? colorHex : '#777777';
+}
 
-  if (normalizedColor.includes('сер')) {
-    return '#8f8b82';
-  }
-
-  if (normalizedColor.includes('граф')) {
-    return '#555555';
-  }
-
-  if (normalizedColor.includes('корич')) {
-    return '#735444';
-  }
-
-  if (normalizedColor.includes('беж')) {
-    return '#c9b28a';
-  }
-
-  if (normalizedColor.includes('черн')) {
-    return '#222222';
-  }
-
-  if (normalizedColor.includes('бел')) {
-    return '#eeeeee';
-  }
-
-  if (normalizedColor.includes('син')) {
-    return '#2563eb';
-  }
-
-  if (normalizedColor.includes('зел')) {
-    return '#5f7655';
-  }
-
-  if (normalizedColor.includes('жел')) {
-    return '#d4b85a';
-  }
-
-  return '#777777';
+function createSwatchMarkup(colorHex) {
+  return `<span><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="17" fill="${escapeHtml(getSafeColorHex(colorHex))}"></circle></svg></span>`;
 }
 
 function escapeHtml(value) {
@@ -160,6 +131,7 @@ function addToCart(productId, variantId, button) {
 
       variantName: variant.name,
       color: variant.color,
+      colorHex: variant.colorHex,
       thickness: variant.thickness,
 
       image: product.image?.path || '',
@@ -196,7 +168,14 @@ function getSelectedValues(name) {
 function getActiveCategory() {
   const input = filtersForm.querySelector('input[name="category"]:checked');
 
-  return input ? input.value : 'Тротуарная плитка';
+  return input ? input.value : '';
+}
+
+function getCategoryVariants() {
+  const activeCategory = getActiveCategory();
+  return catalogProducts
+    .filter((product) => !activeCategory || product.category?.name === activeCategory)
+    .flatMap((product) => product.variants || []);
 }
 
 function normalizePriceInputs(source) {
@@ -343,12 +322,14 @@ function createProductCard(product) {
 
   const imageAlt = escapeHtml(product.image?.alt || product.name);
 
-  const color = escapeHtml(variant.color || 'Цвет уточняется');
+  const color = variant.color ? escapeHtml(variant.color) : '';
 
   const thickness =
     variant.thickness !== null && variant.thickness !== undefined
       ? `${escapeHtml(variant.thickness)} мм`
       : 'Толщина уточняется';
+
+  const variantMeta = [thickness, color].filter(Boolean).join(' · ');
 
   const size = escapeHtml(product.size || 'Размер уточняется');
 
@@ -384,7 +365,7 @@ function createProductCard(product) {
       </a>
 
       <p class="catalog-card__meta">
-        ${thickness} · ${color}
+        ${variantMeta}
       </p>
 
       <ul class="catalog-card__features">
@@ -478,7 +459,7 @@ function renderCategories() {
       }
 
       syncCategoryUI(category);
-      renderColors();
+      renderDynamicFilters();
       renderCatalog();
     });
   });
@@ -489,23 +470,17 @@ function renderColors() {
     return;
   }
 
-  const activeCategory = getActiveCategory();
-
-  const colors = [
-    ...new Set(
-      catalogProducts
-        .filter((product) => {
-          return !activeCategory || product.category?.name === activeCategory;
-        })
-        .flatMap((product) => product.variants || [])
-        .map((variant) => variant.color)
-        .filter(Boolean),
-    ),
-  ];
+  const colors = new Map();
+  getCategoryVariants().forEach((variant) => {
+    if (variant.color && !colors.has(variant.color)) {
+      colors.set(variant.color, variant.colorHex);
+    }
+  });
 
   colorFiltersContainer.innerHTML = '';
+  if (colorFilterSection) colorFilterSection.hidden = colors.size === 0;
 
-  colors.forEach((color) => {
+  colors.forEach((colorHex, color) => {
     const label = document.createElement('label');
 
     label.className = 'catalog-color';
@@ -519,21 +494,56 @@ function renderColors() {
         value="${escapeHtml(color)}"
       />
 
-      <span data-color="${escapeHtml(getColorHex(color))}"></span>
+      ${createSwatchMarkup(colorHex)}
     `;
 
     colorFiltersContainer.append(label);
-
-    applyColorSwatches();
   });
 }
 
-function applyColorSwatches() {
-  document.querySelectorAll('[data-color]').forEach((element) => {
-    const color = element.dataset.color;
+function renderThicknesses() {
+  if (!thicknessFiltersContainer) return;
+  const thicknesses = [...new Set(
+    getCategoryVariants()
+      .map((variant) => Number(variant.thickness))
+      .filter((value) => Number.isInteger(value) && value > 0),
+  )].sort((a, b) => a - b);
 
-    element.style.setProperty('--swatch', color);
+  thicknessFiltersContainer.replaceChildren();
+  thicknesses.forEach((thickness) => {
+    const label = document.createElement('label');
+    label.className = 'catalog-check';
+    label.innerHTML = `<input type="checkbox" name="thickness" value="${thickness}"><span>${thickness}</span>`;
+    thicknessFiltersContainer.append(label);
   });
+}
+
+function configurePriceRange() {
+  const prices = getCategoryVariants()
+    .map((variant) => Number(variant.price))
+    .filter((price) => Number.isFinite(price) && price > 0);
+  const minimum = prices.length ? Math.floor(Math.min(...prices) / 10) * 10 : 0;
+  const maximum = prices.length ? Math.ceil(Math.max(...prices) / 10) * 10 : 1;
+  const safeMaximum = Math.max(minimum + 1, maximum);
+
+  [priceMinInput, rangeMinInput].forEach((input) => {
+    input.min = String(minimum);
+    input.max = String(safeMaximum);
+    input.value = String(minimum);
+  });
+  [priceMaxInput, rangeMaxInput].forEach((input) => {
+    input.min = String(minimum);
+    input.max = String(safeMaximum);
+    input.value = String(safeMaximum);
+  });
+  if (priceScaleMin) priceScaleMin.textContent = formatPrice(minimum);
+  if (priceScaleMax) priceScaleMax.textContent = formatPrice(safeMaximum);
+}
+
+function renderDynamicFilters() {
+  renderColors();
+  renderThicknesses();
+  configurePriceRange();
 }
 
 function renderCatalog() {
@@ -566,7 +576,7 @@ function renderCatalog() {
   emptyState.hidden = hasProducts;
 }
 
-function resetFilters(category = 'Тротуарная плитка') {
+function resetFilters(category = getActiveCategory()) {
   filtersForm.reset();
 
   const categoryInput = filtersForm.querySelector(
@@ -577,11 +587,7 @@ function resetFilters(category = 'Тротуарная плитка') {
     categoryInput.checked = true;
   }
 
-  priceMinInput.value = '500';
-  priceMaxInput.value = '2500';
-
-  rangeMinInput.value = '500';
-  rangeMaxInput.value = '2500';
+  configurePriceRange();
 
   sortSelect.value = 'popular';
 
@@ -663,6 +669,7 @@ function showCatalogLoadError(error) {
 filtersForm.addEventListener('change', (event) => {
   if (event.target.matches('input[name="category"]')) {
     syncCategoryUI(event.target.value);
+    renderDynamicFilters();
   }
 
   renderCatalog();
@@ -670,11 +677,7 @@ filtersForm.addEventListener('change', (event) => {
 
 filtersForm.addEventListener('reset', () => {
   window.setTimeout(() => {
-    priceMinInput.value = '500';
-    priceMaxInput.value = '2500';
-
-    rangeMinInput.value = '500';
-    rangeMaxInput.value = '2500';
+    configurePriceRange();
 
     renderCatalog();
   }, 0);
@@ -759,7 +762,7 @@ async function initCatalog() {
     await loadCatalogProducts();
 
     renderCategories();
-    renderColors();
+    renderDynamicFilters();
 
     renderCatalog();
   } catch (error) {

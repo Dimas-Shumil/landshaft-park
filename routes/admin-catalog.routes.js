@@ -93,12 +93,38 @@ const nullableThicknessSchema = z.preprocess(
   z.number().int().min(1).max(1000).nullable(),
 );
 
+const VARIANT_COLOR_PALETTE = Object.freeze({
+  '': null,
+  'Белый': '#f3f2ed',
+  'Светло-серый': '#c9c9c5',
+  'Серый': '#8f8b82',
+  'Тёмно-серый': '#5f605e',
+  'Графит': '#414344',
+  'Чёрный': '#202120',
+  'Кремовый': '#e8d8b9',
+  'Бежевый': '#c9b28a',
+  'Песочный': '#d4b483',
+  'Жёлтый': '#d4b85a',
+  'Оранжевый': '#d9772b',
+  'Красный': '#c93632',
+  'Бордовый': '#7a2630',
+  'Коричневый': '#735444',
+  'Тёмно-коричневый': '#4b352b',
+  'Зелёный': '#5f7655',
+  'Оливковый': '#7d8050',
+  'Голубой': '#72a6bd',
+  'Синий': '#35658f',
+  'Фиолетовый': '#70527c',
+});
+
+const variantColorSchema = z.enum(Object.keys(VARIANT_COLOR_PALETTE));
+
 const variantPayloadSchema = z
   .object({
     id: z.number().int().positive().optional(),
     name: z.string().trim().min(1).max(120).default('Стандарт'),
     sku: nullableSkuSchema.optional().default(null),
-    color: z.string().trim().max(120).optional().default(''),
+    color: variantColorSchema.optional().default(''),
     thicknessMm: nullableThicknessSchema.optional().default(null),
     price: z.number().int().min(0).max(MAX_PRICE),
     isActive: z.boolean().optional().default(true),
@@ -126,6 +152,31 @@ const productPayloadSchema = z
       .max(MAX_VARIANTS_PER_PRODUCT),
   })
   .strict();
+
+const PRODUCT_FIELD_LABELS = {
+  title: 'название',
+  slug: 'slug',
+  categoryId: 'категория',
+  unit: 'единица измерения',
+  variants: 'варианты',
+  name: 'название варианта',
+  sku: 'SKU',
+  color: 'цвет',
+  thicknessMm: 'толщина',
+  price: 'цена',
+};
+
+function formatProductValidationError(error) {
+  const issue = error.issues?.[0];
+  if (!issue) return 'Проверьте данные товара.';
+  const path = issue.path || [];
+  const field = path[path.length - 1];
+  const variantIndex = path[0] === 'variants' && Number.isInteger(path[1])
+    ? ` варианта ${path[1] + 1}`
+    : '';
+  const label = PRODUCT_FIELD_LABELS[field] || String(field || 'данные');
+  return `Не удалось сохранить товар: поле «${label}${variantIndex}» — ${issue.message}`;
+}
 
 const imageUpdateSchema = z
   .object({
@@ -369,6 +420,7 @@ function buildVariantData(variant) {
     name: variant.name,
     sku: variant.sku,
     color: variant.color,
+    colorHex: VARIANT_COLOR_PALETTE[variant.color],
     thicknessMm: variant.thicknessMm,
     price: variant.price,
     isActive: variant.isActive,
@@ -527,7 +579,9 @@ router.post(
       const parsed = productPayloadSchema.safeParse(req.body);
 
       if (!parsed.success) {
-        return res.status(400).json({ message: 'Проверьте данные товара.' });
+        return res.status(400).json({
+          message: formatProductValidationError(parsed.error),
+        });
       }
 
       const payload = parsed.data;
@@ -589,7 +643,9 @@ router.patch(
       const parsed = productPayloadSchema.safeParse(req.body);
 
       if (!parsed.success) {
-        return res.status(400).json({ message: 'Проверьте данные товара.' });
+        return res.status(400).json({
+          message: formatProductValidationError(parsed.error),
+        });
       }
 
       const payload = parsed.data;

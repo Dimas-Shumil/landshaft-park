@@ -103,27 +103,7 @@
               <details class="catalog-filter" open>
                 <summary>Толщина, мм</summary>
 
-                <div class="catalog-filter__content">
-                  <label class="catalog-check">
-                    <input type="checkbox" name="thickness" value="40" />
-                    <span>40</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input type="checkbox" name="thickness" value="60" />
-                    <span>60</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input type="checkbox" name="thickness" value="80" />
-                    <span>80</span>
-                  </label>
-
-                  <label class="catalog-check">
-                    <input type="checkbox" name="thickness" value="100" />
-                    <span>100</span>
-                  </label>
-                </div>
+                <div class="catalog-filter__content" data-thickness-filters></div>
               </details>
 
               <details class="catalog-filter" open>
@@ -135,10 +115,10 @@
                       <span>от</span>
                       <input
                         type="number"
-                        min="500"
-                        max="2500"
-                        step="10"
-                        value="500"
+                        min="0"
+                        max="1"
+                        step="1"
+                        value="0"
                         data-price-min
                       />
                     </label>
@@ -147,10 +127,10 @@
                       <span>до</span>
                       <input
                         type="number"
-                        min="500"
-                        max="2500"
-                        step="10"
-                        value="2500"
+                        min="0"
+                        max="1"
+                        step="1"
+                        value="1"
                         data-price-max
                       />
                     </label>
@@ -159,28 +139,28 @@
                   <div class="catalog-range">
                     <input
                       type="range"
-                      min="500"
-                      max="2500"
-                      step="10"
-                      value="500"
+                      min="0"
+                      max="1"
+                      step="1"
+                      value="0"
                       aria-label="Минимальная цена"
                       data-range-min
                     />
 
                     <input
                       type="range"
-                      min="500"
-                      max="2500"
-                      step="10"
-                      value="2500"
+                      min="0"
+                      max="1"
+                      step="1"
+                      value="1"
                       aria-label="Максимальная цена"
                       data-range-max
                     />
                   </div>
 
                   <div class="catalog-price__scale">
-                    <span>500</span>
-                    <span>2500</span>
+                    <span data-price-scale-min>0</span>
+                    <span data-price-scale-max>1</span>
                   </div>
                 </div>
               </details>

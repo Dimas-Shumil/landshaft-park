@@ -260,6 +260,13 @@ html {
   transform: scaleX(1);
   transform-origin: left;
 }
+.header__nav a.is-current {
+  color: #2f4a2f;
+}
+.header__nav a.is-current::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
 
 .header__actions {
   display: flex;
@@ -426,6 +433,9 @@ html {
 .mobile-menu__nav a:hover {
   color: #2f4a2f;
   transform: translateX(8px);
+}
+.mobile-menu__nav a.is-current {
+  color: #2f4a2f;
 }
 
 .mobile-menu__bottom {
@@ -2601,6 +2611,12 @@ html {
   font-weight: 500;
   line-height: 1.5;
   color: #74806f;
+}
+.calculate-form__consent a {
+  color: #2f4a2f;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .calculate-form__delivery input,

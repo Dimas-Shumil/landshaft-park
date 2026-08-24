@@ -17,7 +17,13 @@ const REQUESTS_MAX_PAGE_SIZE = 50;
 const MAX_CONFIRMED_TOTAL = 2_000_000_000;
 const MAX_CONFIRMED_NUMBER = 1_000_000;
 
-const ORDER_STATUSES = ['NEW', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
+const ORDER_STATUSES = [
+  'NEW',
+  'IN_PROGRESS',
+  'CONFIRMED',
+  'COMPLETED',
+  'CANCELLED',
+];
 const CALCULATE_STATUSES = ['NEW', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
 const ALL_STATUSES = [
   'NEW',
@@ -602,10 +608,9 @@ router.get('/dashboard', async (req, res, next) => {
       },
       statuses: {
         new: newCalculateRequests + newOrders,
-        inProgress: countGroupedStatus(
-          calculateStatusGroups,
-          'IN_PROGRESS',
-        ),
+        inProgress:
+          countGroupedStatus(calculateStatusGroups, 'IN_PROGRESS') +
+          countGroupedStatus(orderStatusGroups, 'IN_PROGRESS'),
         confirmed: countGroupedStatus(orderStatusGroups, 'CONFIRMED'),
         total: totalCalculateRequests + totalOrders,
       },

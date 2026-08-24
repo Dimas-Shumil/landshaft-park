@@ -55,6 +55,7 @@
 
   const ORDER_STATUS_META = {
     NEW: { label: 'Новый', className: 'is-new' },
+    IN_PROGRESS: { label: 'В обработке', className: 'is-progress' },
     CONFIRMED: { label: 'Подтверждён', className: 'is-confirmed' },
     COMPLETED: { label: 'Завершён', className: 'is-completed' },
     CANCELLED: { label: 'Отменён', className: 'is-cancelled' },
@@ -160,7 +161,8 @@
 
   function formatCurrency(value) {
     const number = Number(value);
-    return Number.isFinite(number) ? currencyFormatter.format(number) : '—';
+    if (!Number.isFinite(number)) return '—';
+    return number > 0 ? currencyFormatter.format(number) : 'Цена по запросу';
   }
 
   function formatNumber(value) {
@@ -814,6 +816,7 @@
         'Статус',
         [
           { value: 'NEW', label: 'Новый' },
+          { value: 'IN_PROGRESS', label: 'В обработке' },
           { value: 'CONFIRMED', label: 'Подтверждён' },
           { value: 'COMPLETED', label: 'Завершён' },
           { value: 'CANCELLED', label: 'Отменён' },

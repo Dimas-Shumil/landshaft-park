@@ -37,6 +37,7 @@ const sizeElement = document.querySelector('[data-product-size]');
 const thicknessElement = document.querySelector('[data-product-thickness]');
 
 const colorElement = document.querySelector('[data-product-color]');
+const colorRowElement = document.querySelector('[data-product-color-row]');
 
 const purposeElement = document.querySelector('[data-product-purpose]');
 
@@ -68,6 +69,15 @@ let currentImageIndex = 0;
 
 function formatPrice(value) {
   return new Intl.NumberFormat('ru-RU').format(Number(value) || 0);
+}
+
+function getSafeColorHex(value) {
+  const colorHex = String(value ?? '').trim().toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(colorHex) ? colorHex : '#777777';
+}
+
+function createSwatchMarkup(colorHex) {
+  return `<svg class="product-info__swatch" width="22" height="22" viewBox="0 0 22 22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="${escapeHtml(getSafeColorHex(colorHex))}"></circle></svg>`;
 }
 
 function escapeHtml(value) {
@@ -255,59 +265,100 @@ function renderVariants(product) {
     return;
   }
 
-  const label = document.createElement('p');
+  const appendGroup = (labelText, type, variants) => {
+    const group = document.createElement('div');
+    group.className = 'product-info__variant-group';
+    const label = document.createElement('p');
+    label.className = 'product-info__variants-label';
+    label.textContent = labelText;
+    const list = document.createElement('div');
+    list.className = 'product-info__variants-list';
 
-  label.className = 'product-info__variants-label';
-
-  label.textContent = 'Вариант';
-
-  variantsElement.append(label);
-
-  const list = document.createElement('div');
-
-  list.className = 'product-info__variants-list';
-
-  product.variants.forEach((variant) => {
-    const button = document.createElement('button');
-
-    button.type = 'button';
-
-    button.className = 'product-info__variant';
-
-    button.dataset.variantId = String(variant.id);
-
-    const parts = [
-      variant.color,
-      variant.thickness ? `${variant.thickness} мм` : '',
-    ].filter(Boolean);
-
-    button.textContent = parts.join(' · ') || variant.name || 'Вариант';
-
-    button.addEventListener('click', () => {
-      selectVariant(variant);
+    variants.forEach((variant) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'product-info__variant';
+      if (type === 'color') {
+        button.dataset.optionColor = variant.color;
+        button.innerHTML = `${createSwatchMarkup(variant.colorHex)}<span>${escapeHtml(variant.color)}</span>`;
+      } else if (type === 'thickness') {
+        button.dataset.optionThickness = String(variant.thickness);
+        button.textContent = `${variant.thickness} мм`;
+      } else {
+        button.dataset.variantId = String(variant.id);
+        button.textContent = [variant.name, variant.sku].filter(Boolean).join(' · ') || 'Вариант';
+      }
+      button.addEventListener('click', () => {
+        if (type === 'variant') {
+          selectVariant(variant);
+          return;
+        }
+        const candidates = product.variants.filter((item) =>
+          type === 'color'
+            ? item.color === variant.color
+            : Number(item.thickness) === Number(variant.thickness),
+        );
+        const compatible = candidates.find((item) =>
+          type === 'color'
+            ? Number(item.thickness) === Number(selectedVariant?.thickness)
+            : item.color === selectedVariant?.color,
+        );
+        selectVariant(compatible || candidates[0]);
+      });
+      list.append(button);
     });
+    group.append(label, list);
+    variantsElement.append(group);
+  };
 
-    list.append(button);
-  });
+  const colors = [...new Map(
+    product.variants.filter((variant) => variant.color).map((variant) => [variant.color, variant]),
+  ).values()];
+  const thicknesses = [...new Map(
+    product.variants
+      .filter((variant) => Number.isFinite(Number(variant.thickness)))
+      .map((variant) => [Number(variant.thickness), variant]),
+  ).values()].sort((a, b) => Number(a.thickness) - Number(b.thickness));
 
-  variantsElement.append(list);
+  if (colors.length) appendGroup('Цвет', 'color', colors);
+  if (thicknesses.length) appendGroup('Толщина', 'thickness', thicknesses);
+  const combinationsCount = new Set(
+    product.variants.map((variant) => `${variant.color || ''}\u0000${variant.thickness ?? ''}`),
+  ).size;
+  if ((!colors.length && !thicknesses.length) || combinationsCount < product.variants.length) {
+    appendGroup('Вариант', 'variant', product.variants);
+  }
 }
 
 function selectVariant(variant) {
   selectedVariant = variant;
 
-  priceElement.textContent = `${formatPrice(variant.price)} ₽`;
+  const hasPrice = Number(variant.price) > 0;
+  priceElement.textContent = hasPrice
+    ? `${formatPrice(variant.price)} ₽`
+    : 'Цена по запросу';
+  unitElement.hidden = !hasPrice;
 
   thicknessElement.textContent = variant.thickness
     ? `${variant.thickness} мм`
     : 'Уточняется';
 
-  colorElement.textContent = variant.color || 'Уточняется';
+  colorElement.textContent = variant.color || '';
+  if (colorRowElement) colorRowElement.hidden = !variant.color;
 
+  variantsElement.querySelectorAll('[data-option-color]').forEach((button) => {
+    button.classList.toggle('is-active', button.dataset.optionColor === variant.color);
+  });
+  variantsElement.querySelectorAll('[data-option-thickness]').forEach((button) => {
+    button.classList.toggle(
+      'is-active',
+      Number(button.dataset.optionThickness) === Number(variant.thickness),
+    );
+  });
   variantsElement.querySelectorAll('[data-variant-id]').forEach((button) => {
     button.classList.toggle(
       'is-active',
-      Number(button.dataset.variantId) === variant.id,
+      Number(button.dataset.variantId) === Number(variant.id),
     );
   });
 }
@@ -412,13 +463,13 @@ function createRelatedProductCard(product) {
       }
 
       ${
-        Number.isFinite(price)
+        Number.isFinite(price) && price > 0
           ? `
             <p class="product-related-card__price">
               от ${formatPrice(price)} ₽/${unit}
             </p>
           `
-          : ''
+          : `<p class="product-related-card__price">Цена по запросу</p>`
       }
 
       <a
@@ -578,6 +629,7 @@ function addToCart() {
       variantName: selectedVariant.name,
 
       color: selectedVariant.color,
+      colorHex: selectedVariant.colorHex,
 
       thickness: selectedVariant.thickness,
 

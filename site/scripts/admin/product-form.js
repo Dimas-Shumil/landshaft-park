@@ -633,7 +633,7 @@
   async function deleteProduct() {
     if (!state.productId) return;
     const label = String(titleInput?.value || 'товар').trim();
-    if (!window.confirm(`Удалить «${label}»? Варианты и галерея будут удалены. История заказов сохранит snapshots.`)) return;
+    if (!window.confirm(`Удалить «${label}»? Варианты и галерея будут удалены. Данные в истории заказов сохранятся.`)) return;
     deleteButton.disabled = true;
     try {
       await adminRequest(`/api/admin/catalog/products/${state.productId}`, { method: 'DELETE' });

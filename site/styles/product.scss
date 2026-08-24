@@ -281,6 +281,10 @@
   margin-bottom: 30px;
 }
 
+.product-info__variant-group + .product-info__variant-group {
+  margin-top: 18px;
+}
+
 .product-info__variants-label {
   margin-bottom: 12px;
 
@@ -297,6 +301,9 @@
 }
 
 .product-info__variant {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   min-height: 44px;
   padding: 0 18px;
 
@@ -327,6 +334,16 @@
 
     box-shadow: 0 8px 22px rgba($color-primary-dark, 0.16);
   }
+}
+
+.product-info__swatch {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border: 1px solid rgba($color-primary-dark, 0.14);
+  border-radius: 50%;
+  background: #777777;
 }
 
 .product-characteristics {
