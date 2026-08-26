@@ -55,10 +55,10 @@ const INITIAL_PRODUCTS = [
     sortOrder: 10,
 
     images: [
-      '/site/images/main-tovari/old-city.png',
-      '/site/images/main-tovari/kirpichik.png',
-      '/site/images/main-tovari/classik.png',
-      '/site/images/main-tovari/parket.png',
+      '/site/images/main-tovari/old-city.webp',
+      '/site/images/main-tovari/kirpichik.webp',
+      '/site/images/main-tovari/classik.webp',
+      '/site/images/main-tovari/parket.webp',
     ],
 
     variant: {
@@ -82,7 +82,7 @@ const INITIAL_PRODUCTS = [
 
     sortOrder: 20,
 
-    imagePath: '/site/images/main-tovari/kirpichik.png',
+    imagePath: '/site/images/main-tovari/kirpichik.webp',
 
     variant: {
       name: 'Стандарт',
@@ -105,7 +105,7 @@ const INITIAL_PRODUCTS = [
 
     sortOrder: 30,
 
-    imagePath: '/site/images/main-tovari/classik.png',
+    imagePath: '/site/images/main-tovari/classik.webp',
 
     variant: {
       name: 'Стандарт',
@@ -128,7 +128,7 @@ const INITIAL_PRODUCTS = [
 
     sortOrder: 40,
 
-    imagePath: '/site/images/main-tovari/parket.png',
+    imagePath: '/site/images/main-tovari/parket.webp',
 
     variant: {
       name: 'Стандарт',
