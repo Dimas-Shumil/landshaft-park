@@ -109,10 +109,24 @@
   }
 
   function usesAreaPricing(item) {
-    return normalizeArea(item.area) !== null && isSquareMeterUnit(item.unit);
+    return (
+      ['PAVING', 'FENCE'].includes(String(item.calculation?.type || '')) ||
+      (normalizeArea(item.area) !== null && isSquareMeterUnit(item.unit))
+    );
   }
 
   function getLineTotal(item) {
+    const calculatedTotal = Number(item.calculation?.total);
+
+    if (
+      item.calculation?.total !== null &&
+      item.calculation?.total !== undefined &&
+      Number.isFinite(calculatedTotal) &&
+      calculatedTotal >= 0
+    ) {
+      return Math.round(calculatedTotal);
+    }
+
     const price = Number(item.price) || 0;
     const multiplier = usesAreaPricing(item)
       ? normalizeArea(item.area)
@@ -165,8 +179,9 @@
 
   function getItemKey(item) {
     const area = normalizeArea(item.area);
+    const calculationKey = String(item.calculationKey || '');
 
-    return `${Number(item.variantId)}:${area ?? ''}`;
+    return `${Number(item.variantId)}:${area ?? ''}:${calculationKey}`;
   }
 
   function findItemIndex(cart, key) {
@@ -219,7 +234,36 @@
     const variantMeta = getVariantMeta(item);
     const lineTotal = getLineTotal(item);
     const areaPricing = usesAreaPricing(item);
-    const hasPrice = Number(item.price) > 0;
+    const hasCalculation = ['PAVING', 'FENCE'].includes(
+      String(item.calculation?.type || ''),
+    );
+    const hasPrice = hasCalculation
+      ? item.calculation?.total !== null && item.calculation?.total !== undefined
+      : Number(item.price) > 0;
+    const calculationMarkup =
+      item.calculation?.type === 'PAVING'
+        ? `
+          <p class="cart-item__area">
+            Расчёт плитки: ${escapeHtml(item.calculation.area)} м² +
+            ${escapeHtml(item.calculation.wastePercent)}% запаса →
+            <strong>${escapeHtml(item.calculation.purchaseArea)} м² к закупке</strong>
+          </p>
+        `
+        : item.calculation?.type === 'FENCE'
+          ? `
+            <p class="cart-item__area">
+              Забор ${escapeHtml(item.calculation.length)} × ${escapeHtml(item.calculation.height)} м:
+              <strong>${escapeHtml(item.calculation.panels)} плит, ${escapeHtml(item.calculation.posts)} столбов</strong>
+            </p>
+          `
+          : item.area
+            ? `
+              <p class="cart-item__area">
+                Площадь для расчёта:
+                <strong>${escapeHtml(item.area)} м²</strong>
+              </p>
+            `
+            : '';
 
     article.className = 'cart-item';
     article.dataset.cartItemKey = itemKey;
@@ -281,24 +325,19 @@
             : ''
         }
 
-        ${
-          item.area
-            ? `
-              <p class="cart-item__area">
-                Площадь для расчёта:
-                <strong>${escapeHtml(item.area)} м²</strong>
-              </p>
-            `
-            : ''
-        }
+        ${calculationMarkup}
 
         <div class="cart-item__bottom">
           ${
             areaPricing
               ? `
                 <div class="cart-item__pricing-basis">
-                  <span>Расчёт по площади</span>
-                  <strong>${escapeHtml(item.area)} м²</strong>
+                  <span>${item.calculation?.type === 'FENCE' ? 'Расчёт комплекта' : 'Расчёт по площади'}</span>
+                  <strong>${
+                    item.calculation?.type === 'FENCE'
+                      ? `${escapeHtml(item.calculation.sections)} пролётов`
+                      : `${escapeHtml(item.calculation?.purchaseArea || item.area)} м²`
+                  }</strong>
                 </div>
               `
               : `
@@ -334,7 +373,7 @@
           }
 
           <div class="cart-item__price">
-            <span>${hasPrice ? `от ${formatPrice(item.price)} ₽/${unit}` : 'Цена по запросу'}</span>
+            <span>${hasCalculation ? 'Предварительный расчёт' : hasPrice ? `от ${formatPrice(item.price)} ₽/${unit}` : 'Цена по запросу'}</span>
             <strong>${hasPrice ? `от ${formatPrice(lineTotal)} ₽` : 'Менеджер рассчитает'}</strong>
           </div>
         </div>
@@ -350,7 +389,11 @@
     }, 0);
 
     const total = cart.reduce((sum, item) => sum + getLineTotal(item), 0);
-    const hasRequestPrice = cart.some((item) => Number(item.price) <= 0);
+    const hasRequestPrice = cart.some((item) =>
+      item.calculation
+        ? item.calculation.total === null || item.calculation.total === undefined
+        : Number(item.price) <= 0,
+    );
 
     linesElement.textContent = String(cart.length);
     quantityElement.textContent = String(totalQuantity);
@@ -496,6 +539,19 @@
         variantId: Number(item.variantId),
         quantity: usesAreaPricing(item) ? 1 : normalizeQuantity(item.quantity),
         area: normalizeArea(item.area),
+        calculation:
+          item.calculation?.type === 'PAVING'
+            ? {
+                type: 'PAVING',
+                area: Number(item.calculation.area),
+              }
+            : item.calculation?.type === 'FENCE'
+              ? {
+                  type: 'FENCE',
+                  length: Number(item.calculation.length),
+                  height: Number(item.calculation.height),
+                }
+              : null,
       })),
     };
 
@@ -535,7 +591,11 @@
 
       if (orderTotalElement) {
         const estimatedTotal = Number(data.order?.estimatedTotal) || 0;
-        orderTotalElement.textContent = cart.some((item) => Number(item.price) <= 0)
+        orderTotalElement.textContent = cart.some((item) =>
+          item.calculation
+            ? item.calculation.total === null || item.calculation.total === undefined
+            : Number(item.price) <= 0,
+        )
           ? estimatedTotal > 0
             ? `от ${formatPrice(estimatedTotal)} ₽ + расчёт`
             : 'Цена по запросу'

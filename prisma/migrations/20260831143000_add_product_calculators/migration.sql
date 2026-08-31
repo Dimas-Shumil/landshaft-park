@@ -1,0 +1,21 @@
+ALTER TABLE "Product" ADD COLUMN "calculatorType" TEXT NOT NULL DEFAULT 'NONE';
+ALTER TABLE "Product" ADD COLUMN "pavingWastePercent" REAL NOT NULL DEFAULT 7;
+ALTER TABLE "Product" ADD COLUMN "fenceSectionWidth" REAL;
+ALTER TABLE "Product" ADD COLUMN "fencePanelHeight" REAL;
+ALTER TABLE "Product" ADD COLUMN "fencePostPrice" INTEGER;
+
+ALTER TABLE "OrderItem" ADD COLUMN "calculatorTypeSnapshot" TEXT NOT NULL DEFAULT 'NONE';
+ALTER TABLE "OrderItem" ADD COLUMN "pavingWastePercentSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "pavingWasteAreaSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "pavingPurchaseAreaSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "fenceLengthSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "fenceHeightSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "fenceSectionWidthSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePanelHeightSnapshot" REAL;
+ALTER TABLE "OrderItem" ADD COLUMN "fenceSectionsSnapshot" INTEGER;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePanelsPerSectionSnapshot" INTEGER;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePanelsSnapshot" INTEGER;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePostsSnapshot" INTEGER;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePostUnitPriceSnapshot" INTEGER;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePanelsTotalSnapshot" INTEGER;
+ALTER TABLE "OrderItem" ADD COLUMN "fencePostsTotalSnapshot" INTEGER;

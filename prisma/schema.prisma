@@ -32,6 +32,12 @@ enum FulfillmentMethod {
   DELIVERY
 }
 
+enum ProductCalculatorType {
+  NONE
+  PAVING
+  FENCE
+}
+
 model AdminUser {
   id           Int       @id @default(autoincrement())
   name         String
@@ -50,7 +56,6 @@ model AdminUser {
   @@index([role])
   @@index([isActive])
 }
-
 
 model AdminSession {
   id Int @id @default(autoincrement())
@@ -108,6 +113,12 @@ model Product {
   dimensions String @default("")
   purpose    String @default("")
 
+  calculatorType     ProductCalculatorType @default(NONE)
+  pavingWastePercent Float                 @default(7)
+  fenceSectionWidth  Float?
+  fencePanelHeight   Float?
+  fencePostPrice     Int?
+
   seoTitle       String @default("")
   seoDescription String @default("")
 
@@ -137,7 +148,7 @@ model ProductVariant {
   name String  @default("Стандарт")
   sku  String? @unique
 
-  color       String @default("")
+  color       String  @default("")
   colorHex    String?
   thicknessMm Int?
 
@@ -283,6 +294,22 @@ model OrderItem {
   requestedArea     Float?
 
   estimatedLineTotal Int @default(0)
+
+  calculatorTypeSnapshot        ProductCalculatorType @default(NONE)
+  pavingWastePercentSnapshot    Float?
+  pavingWasteAreaSnapshot       Float?
+  pavingPurchaseAreaSnapshot    Float?
+  fenceLengthSnapshot           Float?
+  fenceHeightSnapshot           Float?
+  fenceSectionWidthSnapshot     Float?
+  fencePanelHeightSnapshot      Float?
+  fenceSectionsSnapshot         Int?
+  fencePanelsPerSectionSnapshot Int?
+  fencePanelsSnapshot           Int?
+  fencePostsSnapshot            Int?
+  fencePostUnitPriceSnapshot    Int?
+  fencePanelsTotalSnapshot      Int?
+  fencePostsTotalSnapshot       Int?
 
   isAvailable Boolean?
 

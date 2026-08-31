@@ -1,6 +1,7 @@
 'use strict';
 
 const PRODUCT_CART_KEY = 'landshaftParkCart';
+const PRODUCT_MAX_ESTIMATED_TOTAL = 2_000_000_000;
 
 const productView = document.querySelector('[data-product-view]');
 
@@ -42,6 +43,18 @@ const colorRowElement = document.querySelector('[data-product-color-row]');
 const purposeElement = document.querySelector('[data-product-purpose]');
 
 const areaInput = document.querySelector('[data-product-area]');
+const basicAreaWrap = document.querySelector('[data-product-area-basic]');
+const basicAreaInput = document.querySelector('[data-product-area-basic-input]');
+const calculatorElement = document.querySelector('[data-product-calculator]');
+const calculatorTitle = document.querySelector('[data-calculator-title]');
+const pavingCalculator = document.querySelector('[data-calculator-paving]');
+const fenceCalculator = document.querySelector('[data-calculator-fence]');
+const fenceLengthInput = document.querySelector('[data-fence-length]');
+const fenceHeightInput = document.querySelector('[data-fence-height]');
+const calculatorMessage = document.querySelector('[data-calculator-message]');
+const calculatorResult = document.querySelector('[data-calculator-result]');
+const calculatorResultContent = document.querySelector('[data-calculator-result-content]');
+const calculatorDisclaimer = document.querySelector('[data-calculator-disclaimer]');
 
 const addButton = document.querySelector('[data-product-add]');
 
@@ -66,6 +79,7 @@ const relatedGrid = document.querySelector('[data-related-grid]');
 let currentProduct = null;
 let selectedVariant = null;
 let currentImageIndex = 0;
+let currentCalculation = null;
 
 function formatPrice(value) {
   return new Intl.NumberFormat('ru-RU').format(Number(value) || 0);
@@ -330,6 +344,235 @@ function renderVariants(product) {
   }
 }
 
+function formatMeasurement(value) {
+  return new Intl.NumberFormat('ru-RU', {
+    maximumFractionDigits: 2,
+  }).format(Number(value));
+}
+
+function roundMeasurement(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+function getCalculatorType() {
+  const type = String(currentProduct?.calculator?.type || 'NONE');
+  return ['PAVING', 'FENCE'].includes(type) ? type : 'NONE';
+}
+
+function getSelectedVariantLabel() {
+  return [
+    selectedVariant?.name,
+    selectedVariant?.color,
+    selectedVariant?.thickness ? `${selectedVariant.thickness} мм` : '',
+  ]
+    .map((value) => String(value || '').trim())
+    .filter(Boolean)
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .join(' / ');
+}
+
+function hideCalculation() {
+  currentCalculation = null;
+  calculatorResult.hidden = true;
+  calculatorResultContent.innerHTML = '';
+  calculatorMessage.hidden = true;
+  calculatorMessage.textContent = '';
+}
+
+function showCalculatorMessage(message) {
+  currentCalculation = null;
+  calculatorResult.hidden = true;
+  calculatorResultContent.innerHTML = '';
+  calculatorMessage.textContent = message;
+  calculatorMessage.hidden = false;
+}
+
+function renderCalculation(rows, disclaimer) {
+  calculatorResultContent.innerHTML = rows
+    .map(
+      ({ label, value, strong = false }) => `
+        <div${strong ? ' class="is-total"' : ''}>
+          <dt>${escapeHtml(label)}</dt>
+          <dd>${escapeHtml(value)}</dd>
+        </div>
+      `,
+    )
+    .join('');
+  calculatorDisclaimer.textContent = disclaimer;
+  calculatorMessage.hidden = true;
+  calculatorResult.hidden = false;
+}
+
+function updatePavingCalculation() {
+  const rawArea = String(areaInput?.value || '').trim();
+
+  if (!rawArea) {
+    hideCalculation();
+    return;
+  }
+
+  const area = Number(rawArea);
+  const wastePercent = Number(currentProduct?.calculator?.paving?.wastePercent);
+
+  if (!Number.isFinite(area) || area <= 0 || area > 100000) {
+    showCalculatorMessage('Укажите площадь от 0,1 до 100 000 м².');
+    return;
+  }
+
+  if (!Number.isFinite(wastePercent) || wastePercent < 0 || wastePercent > 50) {
+    showCalculatorMessage('Для товара пока не настроен процент запаса. Менеджер рассчитает его вручную.');
+    return;
+  }
+
+  const wasteArea = roundMeasurement((area * wastePercent) / 100);
+  const purchaseArea = roundMeasurement(area + wasteArea);
+  const unitPrice = Number(selectedVariant?.price);
+  const hasPrice = Number.isFinite(unitPrice) && unitPrice > 0;
+  const total = hasPrice ? Math.round(purchaseArea * unitPrice) : null;
+
+  if (total !== null && (!Number.isSafeInteger(total) || total > PRODUCT_MAX_ESTIMATED_TOTAL)) {
+    showCalculatorMessage('Предварительная стоимость превышает допустимый лимит. Оставьте заявку для ручного расчёта.');
+    return;
+  }
+
+  currentCalculation = {
+    type: 'PAVING',
+    area: roundMeasurement(area),
+    wastePercent,
+    wasteArea,
+    purchaseArea,
+    unitPrice: hasPrice ? unitPrice : null,
+    total,
+  };
+
+  renderCalculation(
+    [
+      { label: 'Площадь участка', value: `${formatMeasurement(area)} м²` },
+      { label: `Рекомендуемый запас ${formatMeasurement(wastePercent)}%`, value: `+${formatMeasurement(wasteArea)} м²` },
+      { label: 'К закупке', value: `${formatMeasurement(purchaseArea)} м²` },
+      { label: currentProduct.name, value: getSelectedVariantLabel() || 'Стандарт' },
+      { label: 'Цена', value: hasPrice ? `${formatPrice(unitPrice)} ₽/м²` : 'По запросу' },
+      { label: 'Предварительная стоимость', value: total === null ? 'Уточнит менеджер' : `${formatPrice(total)} ₽`, strong: true },
+    ],
+    'Расчёт предварительный. Точное количество и итоговую стоимость подтвердит менеджер.',
+  );
+}
+
+function updateFenceCalculation() {
+  const rawLength = String(fenceLengthInput?.value || '').trim();
+  const rawHeight = String(fenceHeightInput?.value || '').trim();
+
+  if (!rawLength || !rawHeight) {
+    hideCalculation();
+    return;
+  }
+
+  const length = Number(rawLength);
+  const height = Number(rawHeight);
+
+  if (!Number.isFinite(length) || length <= 0 || length > 100000) {
+    showCalculatorMessage('Укажите длину забора от 0,1 до 100 000 м.');
+    return;
+  }
+
+  if (!Number.isFinite(height) || height <= 0 || height > 20) {
+    showCalculatorMessage('Укажите высоту забора от 0,1 до 20 м.');
+    return;
+  }
+
+  const sectionWidth = Number(currentProduct?.calculator?.fence?.sectionWidth);
+  const panelHeight = Number(currentProduct?.calculator?.fence?.panelHeight);
+  const postPriceValue = currentProduct?.calculator?.fence?.postPrice;
+  const postPrice = postPriceValue === null ? null : Number(postPriceValue);
+  const panelPrice = Number(selectedVariant?.price);
+
+  if (
+    !Number.isFinite(sectionWidth) ||
+    sectionWidth <= 0 ||
+    !Number.isFinite(panelHeight) ||
+    panelHeight <= 0 ||
+    !Number.isInteger(postPrice) ||
+    postPrice < 0
+  ) {
+    showCalculatorMessage('Для этого забора пока не заполнены технические параметры. Менеджер выполнит расчёт вручную.');
+    return;
+  }
+
+  const sections = Math.ceil(length / sectionWidth);
+  const panelsPerSection = Math.ceil(height / panelHeight);
+  const panels = sections * panelsPerSection;
+  const posts = sections + 1;
+
+  if (![sections, panelsPerSection, panels, posts].every(Number.isSafeInteger)) {
+    showCalculatorMessage('Получилось слишком большое количество элементов. Уменьшите длину или высоту.');
+    return;
+  }
+
+  const hasPanelPrice = Number.isFinite(panelPrice) && panelPrice > 0;
+  const panelsTotal = hasPanelPrice ? panels * panelPrice : null;
+  const postsTotal = posts * postPrice;
+  const total = panelsTotal === null ? null : panelsTotal + postsTotal;
+
+  if (
+    [panelsTotal, postsTotal, total].some(
+      (value) =>
+        value !== null &&
+        (!Number.isSafeInteger(value) || value > PRODUCT_MAX_ESTIMATED_TOTAL),
+    )
+  ) {
+    showCalculatorMessage('Предварительная стоимость превышает допустимый лимит. Оставьте заявку для ручного расчёта.');
+    return;
+  }
+
+  currentCalculation = {
+    type: 'FENCE',
+    length: roundMeasurement(length),
+    height: roundMeasurement(height),
+    sectionWidth,
+    panelHeight,
+    sections,
+    panelsPerSection,
+    panels,
+    posts,
+    panelPrice: hasPanelPrice ? panelPrice : null,
+    postPrice,
+    panelsTotal,
+    postsTotal,
+    total,
+  };
+
+  renderCalculation(
+    [
+      { label: 'Длина забора', value: `${formatMeasurement(length)} м` },
+      { label: 'Высота', value: `${formatMeasurement(height)} м` },
+      { label: 'Пролётов', value: `${sections} шт.` },
+      { label: 'Заборных плит', value: `${panels} шт.` },
+      { label: 'Столбов', value: `${posts} шт.` },
+      { label: 'Стоимость плит', value: panelsTotal === null ? 'По запросу' : `${formatPrice(panelsTotal)} ₽` },
+      { label: 'Стоимость столбов', value: `${formatPrice(postsTotal)} ₽` },
+      { label: 'Ориентировочная стоимость', value: total === null ? 'Уточнит менеджер' : `${formatPrice(total)} ₽`, strong: true },
+    ],
+    'Расчёт предварительный. Точное количество элементов, комплектацию и итоговую стоимость подтвердит менеджер.',
+  );
+}
+
+function updateCalculator() {
+  const type = getCalculatorType();
+  if (type === 'PAVING') updatePavingCalculation();
+  else if (type === 'FENCE') updateFenceCalculation();
+  else hideCalculation();
+}
+
+function configureCalculator() {
+  const type = getCalculatorType();
+  calculatorElement.hidden = type === 'NONE';
+  basicAreaWrap.hidden = type !== 'NONE';
+  pavingCalculator.hidden = type !== 'PAVING';
+  fenceCalculator.hidden = type !== 'FENCE';
+  calculatorTitle.textContent = type === 'FENCE' ? 'Рассчитать забор' : 'Рассчитать плитку';
+  hideCalculation();
+}
+
 function selectVariant(variant) {
   selectedVariant = variant;
 
@@ -361,6 +604,8 @@ function selectVariant(variant) {
       Number(button.dataset.variantId) === Number(variant.id),
     );
   });
+
+  updateCalculator();
 
 }
 
@@ -635,6 +880,7 @@ function renderProduct(product) {
 
   renderGallery(product);
   renderVariants(product);
+  configureCalculator();
 
   selectVariant(product.variants[0]);
 
@@ -655,20 +901,30 @@ function addToCart() {
     return;
   }
 
-  const areaValue = Number(areaInput.value);
-
+  const calculatorType = getCalculatorType();
+  const areaSource = calculatorType === 'NONE' ? basicAreaInput : areaInput;
+  const areaValue = Number(areaSource?.value);
   const area = Number.isFinite(areaValue) && areaValue > 0 ? areaValue : null;
+  const calculation = currentCalculation
+    ? JSON.parse(JSON.stringify(currentCalculation))
+    : null;
+  const calculationKey = calculation
+    ? calculation.type === 'PAVING'
+      ? `PAVING:${calculation.area}`
+      : `FENCE:${calculation.length}:${calculation.height}`
+    : '';
 
   const cart = getCart();
 
   const existingItem = cart.find(
     (item) =>
       Number(item.variantId) === selectedVariant.id &&
-      Number(item.area || 0) === Number(area || 0),
+      Number(item.area || 0) === Number(area || 0) &&
+      String(item.calculationKey || '') === calculationKey,
   );
 
   if (existingItem) {
-    existingItem.quantity = area
+    existingItem.quantity = area || calculation
       ? 1
       : (Number(existingItem.quantity) || 1) + 1;
   } else {
@@ -696,6 +952,8 @@ function addToCart() {
 
       quantity: 1,
       area,
+      calculation,
+      calculationKey,
     });
   }
 
@@ -856,5 +1114,8 @@ mainImageElement.addEventListener(
 );
 
 addButton.addEventListener('click', addToCart);
+areaInput?.addEventListener('input', updateCalculator);
+fenceLengthInput?.addEventListener('input', updateCalculator);
+fenceHeightInput?.addEventListener('input', updateCalculator);
 
 initProductPage();

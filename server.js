@@ -178,11 +178,30 @@ const calculateLimiter = rateLimit({
 const ORDER_MAX_ITEMS = 50;
 const ORDER_MAX_ESTIMATED_TOTAL = 2_000_000_000;
 
-const orderItemSchema = z.object({
-  variantId: z.number().int().positive(),
-  quantity: z.number().int().min(1).max(999),
-  area: z.number().finite().positive().max(100_000).nullable().optional(),
-});
+const orderCalculationSchema = z.discriminatedUnion('type', [
+  z
+    .object({
+      type: z.literal('PAVING'),
+      area: z.number().finite().positive().max(100_000),
+    })
+    .strict(),
+  z
+    .object({
+      type: z.literal('FENCE'),
+      length: z.number().finite().positive().max(100_000),
+      height: z.number().finite().positive().max(20),
+    })
+    .strict(),
+]);
+
+const orderItemSchema = z
+  .object({
+    variantId: z.number().int().positive(),
+    quantity: z.number().int().min(1).max(999),
+    area: z.number().finite().positive().max(100_000).nullable().optional(),
+    calculation: orderCalculationSchema.nullable().optional(),
+  })
+  .strict();
 
 const orderSchema = z.object({
   idempotencyKey: z.string().uuid(),
@@ -331,6 +350,111 @@ function calculateOrderLineTotal(unitPrice, unit, quantity, area) {
   }
 
   return total;
+}
+
+function roundOrderMeasurement(value) {
+  return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+}
+
+function calculateConfiguredOrderItem(product, variant, item) {
+  const calculation = item.calculation;
+
+  if (!calculation) {
+    return null;
+  }
+
+  if (calculation.type !== product.calculatorType) {
+    return { error: 'Тип расчёта товара изменился. Обновите корзину и повторите попытку.' };
+  }
+
+  if (calculation.type === 'PAVING') {
+    const area = roundOrderMeasurement(calculation.area);
+    const wastePercent = Number(product.pavingWastePercent);
+
+    if (!Number.isFinite(wastePercent) || wastePercent < 0 || wastePercent > 50) {
+      return { error: 'Для плитки не настроен процент запаса.' };
+    }
+
+    const wasteArea = roundOrderMeasurement((area * wastePercent) / 100);
+    const purchaseArea = roundOrderMeasurement(area + wasteArea);
+    const estimatedLineTotal = Math.round(variant.price * purchaseArea);
+
+    if (
+      !Number.isSafeInteger(estimatedLineTotal) ||
+      estimatedLineTotal < 0 ||
+      estimatedLineTotal > ORDER_MAX_ESTIMATED_TOTAL
+    ) {
+      return { error: 'Не удалось корректно рассчитать стоимость плитки.' };
+    }
+
+    return {
+      requestedQuantity: 1,
+      requestedArea: area,
+      estimatedLineTotal,
+      snapshots: {
+        calculatorTypeSnapshot: 'PAVING',
+        pavingWastePercentSnapshot: wastePercent,
+        pavingWasteAreaSnapshot: wasteArea,
+        pavingPurchaseAreaSnapshot: purchaseArea,
+      },
+    };
+  }
+
+  const length = roundOrderMeasurement(calculation.length);
+  const height = roundOrderMeasurement(calculation.height);
+  const sectionWidth = Number(product.fenceSectionWidth);
+  const panelHeight = Number(product.fencePanelHeight);
+  const postPrice = product.fencePostPrice;
+
+  if (
+    !Number.isFinite(sectionWidth) ||
+    sectionWidth <= 0 ||
+    !Number.isFinite(panelHeight) ||
+    panelHeight <= 0 ||
+    !Number.isSafeInteger(postPrice) ||
+    postPrice < 0
+  ) {
+    return { error: 'Для забора не заполнены технические параметры расчёта.' };
+  }
+
+  const sections = Math.ceil(length / sectionWidth);
+  const panelsPerSection = Math.ceil(height / panelHeight);
+  const panels = sections * panelsPerSection;
+  const posts = sections + 1;
+  const hasPanelPrice = variant.price > 0;
+  const panelsTotal = hasPanelPrice ? panels * variant.price : 0;
+  const postsTotal = posts * postPrice;
+  const estimatedLineTotal = hasPanelPrice ? panelsTotal + postsTotal : 0;
+
+  if (
+    ![sections, panelsPerSection, panels, posts, panelsTotal, postsTotal, estimatedLineTotal].every(
+      Number.isSafeInteger,
+    ) ||
+    estimatedLineTotal < 0 ||
+    estimatedLineTotal > ORDER_MAX_ESTIMATED_TOTAL
+  ) {
+    return { error: 'Не удалось корректно рассчитать стоимость забора.' };
+  }
+
+  return {
+    requestedQuantity: 1,
+    requestedArea: null,
+    estimatedLineTotal,
+    snapshots: {
+      calculatorTypeSnapshot: 'FENCE',
+      fenceLengthSnapshot: length,
+      fenceHeightSnapshot: height,
+      fenceSectionWidthSnapshot: sectionWidth,
+      fencePanelHeightSnapshot: panelHeight,
+      fenceSectionsSnapshot: sections,
+      fencePanelsPerSectionSnapshot: panelsPerSection,
+      fencePanelsSnapshot: panels,
+      fencePostsSnapshot: posts,
+      fencePostUnitPriceSnapshot: postPrice,
+      fencePanelsTotalSnapshot: panelsTotal,
+      fencePostsTotalSnapshot: postsTotal,
+    },
+  };
 }
 
 function createOrderPublicNumber() {
@@ -874,6 +998,62 @@ function getFulfillmentMethodLabel(value) {
   return value === 'DELIVERY' ? 'Доставка' : 'Самовывоз';
 }
 
+function getOrderCalculationTextLines(item) {
+  if (item.calculatorTypeSnapshot === 'PAVING') {
+    const pavingTotal = item.unitPriceSnapshot > 0
+      ? formatOrderMoney(item.estimatedLineTotal)
+      : 'По запросу';
+    return [
+      'Тип расчёта: плитка',
+      `Площадь клиента: ${formatOrderNumber(item.requestedArea)} м²`,
+      `Запас: ${formatOrderNumber(item.pavingWastePercentSnapshot)}% (+${formatOrderNumber(item.pavingWasteAreaSnapshot)} м²)`,
+      `К закупке: ${formatOrderNumber(item.pavingPurchaseAreaSnapshot)} м²`,
+      `Предварительная стоимость: ${pavingTotal}`,
+    ];
+  }
+
+  if (item.calculatorTypeSnapshot === 'FENCE') {
+    const panelsTotal = item.unitPriceSnapshot > 0
+      ? formatOrderMoney(item.fencePanelsTotalSnapshot)
+      : 'По запросу';
+    const total = item.unitPriceSnapshot > 0
+      ? formatOrderMoney(item.estimatedLineTotal)
+      : 'Уточнит менеджер';
+    return [
+      'Тип расчёта: забор',
+      `Длина забора: ${formatOrderNumber(item.fenceLengthSnapshot)} м`,
+      `Высота забора: ${formatOrderNumber(item.fenceHeightSnapshot)} м`,
+      `Пролётов: ${formatOrderNumber(item.fenceSectionsSnapshot)}`,
+      `Заборных плит: ${formatOrderNumber(item.fencePanelsSnapshot)} шт.`,
+      `Столбов: ${formatOrderNumber(item.fencePostsSnapshot)} шт.`,
+      `Стоимость плит: ${panelsTotal}`,
+      `Стоимость столбов: ${formatOrderMoney(item.fencePostsTotalSnapshot)}`,
+      `Ориентировочная стоимость: ${total}`,
+    ];
+  }
+
+  return [];
+}
+
+function getOrderCalculationHtmlRows(item) {
+  const lines = getOrderCalculationTextLines(item);
+
+  return lines
+    .map((line) => {
+      const separatorIndex = line.indexOf(':');
+      const label = separatorIndex >= 0 ? line.slice(0, separatorIndex) : 'Расчёт';
+      const value = separatorIndex >= 0 ? line.slice(separatorIndex + 1).trim() : line;
+
+      return `
+        <tr>
+          <td style="padding:5px 14px 5px 0;color:#74806f;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.5;">${escapeHtml(label)}</td>
+          <td align="right" style="padding:5px 0;color:#384538;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">${escapeHtml(value)}</td>
+        </tr>
+      `;
+    })
+    .join('');
+}
+
 function buildOrderEmailText(order) {
   const lines = [
     `Новый заказ ${order.publicNumber} с сайта «Ландшафт Парк»`,
@@ -910,6 +1090,8 @@ function buildOrderEmailText(order) {
     if (item.requestedArea !== null) {
       lines.push(`Площадь: ${formatOrderNumber(item.requestedArea)} м²`);
     }
+
+    lines.push(...getOrderCalculationTextLines(item));
 
     lines.push(
       `Цена: ${formatOrderMoney(item.unitPriceSnapshot)}${item.unitSnapshot ? `/${item.unitSnapshot}` : ''}`,
@@ -971,6 +1153,7 @@ function buildOrderEmailHtml(order) {
       const safeLineTotal = escapeHtml(
         formatOrderMoney(item.estimatedLineTotal),
       );
+      const calculationRows = getOrderCalculationHtmlRows(item);
 
       return `
         <tr>
@@ -1007,6 +1190,7 @@ function buildOrderEmailHtml(order) {
                 <td style="padding:7px 14px 0 0;color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;line-height:1.5;">Предварительно</td>
                 <td align="right" style="padding:7px 0 0;color:#1f331f;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:800;line-height:1.5;">${safeLineTotal}</td>
               </tr>
+              ${calculationRows}
             </table>
           </td>
         </tr>
@@ -1319,6 +1503,11 @@ app.get('/api/catalog/products', async (req, res, next) => {
         unit: true,
         dimensions: true,
         purpose: true,
+        calculatorType: true,
+        pavingWastePercent: true,
+        fenceSectionWidth: true,
+        fencePanelHeight: true,
+        fencePostPrice: true,
 
         sortOrder: true,
 
@@ -1414,6 +1603,18 @@ app.get('/api/catalog/products', async (req, res, next) => {
         size: product.dimensions,
         purpose: product.purpose,
 
+        calculator: {
+          type: product.calculatorType,
+          paving: {
+            wastePercent: product.pavingWastePercent,
+          },
+          fence: {
+            sectionWidth: product.fenceSectionWidth,
+            panelHeight: product.fencePanelHeight,
+            postPrice: product.fencePostPrice,
+          },
+        },
+
         order: product.sortOrder,
         minPrice,
 
@@ -1468,6 +1669,12 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
         unit: true,
         dimensions: true,
         purpose: true,
+
+        calculatorType: true,
+        pavingWastePercent: true,
+        fenceSectionWidth: true,
+        fencePanelHeight: true,
+        fencePostPrice: true,
 
         seoTitle: true,
         seoDescription: true,
@@ -1552,6 +1759,18 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
         unit: product.unit,
         size: product.dimensions,
         purpose: product.purpose,
+
+        calculator: {
+          type: product.calculatorType,
+          paving: {
+            wastePercent: product.pavingWastePercent,
+          },
+          fence: {
+            sectionWidth: product.fenceSectionWidth,
+            panelHeight: product.fencePanelHeight,
+            postPrice: product.fencePostPrice,
+          },
+        },
 
         seo: {
           title: productMeta.title,
@@ -1895,6 +2114,11 @@ app.post(
               slug: true,
               unit: true,
               dimensions: true,
+              calculatorType: true,
+              pavingWastePercent: true,
+              fenceSectionWidth: true,
+              fencePanelHeight: true,
+              fencePostPrice: true,
               isPublished: true,
               images: {
                 orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
@@ -1931,16 +2155,35 @@ app.post(
       for (const item of parsed.data.items) {
         const variant = variantsById.get(item.variantId);
         const product = variant.product;
-        const requestedArea = item.area ?? null;
-        const usesArea =
-          requestedArea !== null && isSquareMeterUnit(product.unit);
-        const requestedQuantity = usesArea ? 1 : item.quantity;
-        const estimatedLineTotal = calculateOrderLineTotal(
+        const configuredCalculation = calculateConfiguredOrderItem(
+          product,
+          variant,
+          item,
+        );
+
+        if (configuredCalculation?.error) {
+          return res.status(409).json({ message: configuredCalculation.error });
+        }
+
+        let requestedArea = item.area ?? null;
+        let requestedQuantity =
+          requestedArea !== null && isSquareMeterUnit(product.unit)
+            ? 1
+            : item.quantity;
+        let estimatedLineTotal = calculateOrderLineTotal(
           variant.price,
           product.unit,
           requestedQuantity,
           requestedArea,
         );
+        let calculationSnapshots = { calculatorTypeSnapshot: 'NONE' };
+
+        if (configuredCalculation) {
+          requestedArea = configuredCalculation.requestedArea;
+          requestedQuantity = configuredCalculation.requestedQuantity;
+          estimatedLineTotal = configuredCalculation.estimatedLineTotal;
+          calculationSnapshots = configuredCalculation.snapshots;
+        }
 
         if (estimatedLineTotal === null) {
           return res.status(400).json({
@@ -1985,6 +2228,8 @@ app.post(
           requestedArea,
 
           estimatedLineTotal,
+
+          ...calculationSnapshots,
         });
       }
 
@@ -2046,6 +2291,21 @@ app.post(
                 requestedQuantity: true,
                 requestedArea: true,
                 estimatedLineTotal: true,
+                calculatorTypeSnapshot: true,
+                pavingWastePercentSnapshot: true,
+                pavingWasteAreaSnapshot: true,
+                pavingPurchaseAreaSnapshot: true,
+                fenceLengthSnapshot: true,
+                fenceHeightSnapshot: true,
+                fenceSectionWidthSnapshot: true,
+                fencePanelHeightSnapshot: true,
+                fenceSectionsSnapshot: true,
+                fencePanelsPerSectionSnapshot: true,
+                fencePanelsSnapshot: true,
+                fencePostsSnapshot: true,
+                fencePostUnitPriceSnapshot: true,
+                fencePanelsTotalSnapshot: true,
+                fencePostsTotalSnapshot: true,
               },
             },
           },

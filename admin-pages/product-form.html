@@ -170,6 +170,57 @@
               </section>
 
               <section class="admin-panel admin-editor-card">
+                <div class="admin-editor-card__head">
+                  <div>
+                    <span class="admin-kicker">Расчёт</span>
+                    <h2>Параметры калькулятора</h2>
+                    <p>Тип расчёта задаётся для товара отдельно от его категории.</p>
+                  </div>
+                </div>
+
+                <label class="admin-form-field admin-calculator-type">
+                  <span>Тип расчёта</span>
+                  <select data-product-calculator-type>
+                    <option value="NONE">Не используется</option>
+                    <option value="PAVING">Тротуарная плитка</option>
+                    <option value="FENCE">Забор</option>
+                  </select>
+                </label>
+
+                <div class="admin-calculator-fields" data-calculator-paving hidden>
+                  <div class="admin-calculator-fields__head">
+                    <strong>Тротуарная плитка</strong>
+                    <span>Цена берётся из выбранного варианта товара.</span>
+                  </div>
+                  <label class="admin-form-field">
+                    <span>Запас по умолчанию, %</span>
+                    <input type="number" min="0" max="50" step="0.1" value="7" data-product-paving-waste />
+                  </label>
+                </div>
+
+                <div class="admin-calculator-fields" data-calculator-fence hidden>
+                  <div class="admin-calculator-fields__head">
+                    <strong>Забор</strong>
+                    <span>Цена варианта считается ценой одной заборной плиты.</span>
+                  </div>
+                  <div class="admin-form-grid admin-form-grid--3">
+                    <label class="admin-form-field">
+                      <span>Ширина секции, м *</span>
+                      <input type="number" min="0.01" max="1000" step="0.01" placeholder="2" data-product-fence-section-width />
+                    </label>
+                    <label class="admin-form-field">
+                      <span>Высота плиты, м *</span>
+                      <input type="number" min="0.01" max="20" step="0.01" placeholder="0.5" data-product-fence-panel-height />
+                    </label>
+                    <label class="admin-form-field">
+                      <span>Цена столба, ₽ *</span>
+                      <input type="number" min="0" max="2000000000" step="1" placeholder="1500" data-product-fence-post-price />
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <section class="admin-panel admin-editor-card">
                 <div class="admin-editor-card__head admin-editor-card__head--actions">
                   <div>
                     <span class="admin-kicker">Варианты</span>

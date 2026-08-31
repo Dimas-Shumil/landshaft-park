@@ -656,6 +656,40 @@
         `${formatNumber(item.requestedArea)} м²`,
       );
     }
+    if (item.calculatorTypeSnapshot === 'PAVING') {
+      appendDetailValue(snapshot, 'Тип расчёта', 'Тротуарная плитка');
+      appendDetailValue(
+        snapshot,
+        'Запас',
+        `${formatNumber(item.pavingWastePercentSnapshot)}% (+${formatNumber(item.pavingWasteAreaSnapshot)} м²)`,
+      );
+      appendDetailValue(
+        snapshot,
+        'К закупке',
+        `${formatNumber(item.pavingPurchaseAreaSnapshot)} м²`,
+      );
+    }
+    if (item.calculatorTypeSnapshot === 'FENCE') {
+      appendDetailValue(snapshot, 'Тип расчёта', 'Забор');
+      appendDetailValue(
+        snapshot,
+        'Размер забора',
+        `${formatNumber(item.fenceLengthSnapshot)} × ${formatNumber(item.fenceHeightSnapshot)} м`,
+      );
+      appendDetailValue(snapshot, 'Пролётов', `${item.fenceSectionsSnapshot} шт.`);
+      appendDetailValue(snapshot, 'Заборных плит', `${item.fencePanelsSnapshot} шт.`);
+      appendDetailValue(snapshot, 'Столбов', `${item.fencePostsSnapshot} шт.`);
+      appendDetailValue(
+        snapshot,
+        'Стоимость плит',
+        formatCurrency(item.fencePanelsTotalSnapshot),
+      );
+      appendDetailValue(
+        snapshot,
+        'Стоимость столбов',
+        formatCurrency(item.fencePostsTotalSnapshot),
+      );
+    }
     if (item.thicknessMmSnapshot !== null) {
       appendDetailValue(snapshot, 'Толщина', `${item.thicknessMmSnapshot} мм`);
     }
@@ -706,7 +740,10 @@
       controls.append(
         createManagementInput(
           'Подтв. площадь, м²',
-          item.confirmedArea ?? item.requestedArea,
+          item.confirmedArea ??
+            (item.calculatorTypeSnapshot === 'PAVING'
+              ? item.pavingPurchaseAreaSnapshot
+              : item.requestedArea),
           'data-item-area',
           { type: 'number', min: 0.01, step: 0.01 },
         ),
@@ -716,7 +753,10 @@
     controls.append(
       createManagementInput(
         'Подтв. цена',
-        item.confirmedUnitPrice ?? item.unitPriceSnapshot,
+        item.confirmedUnitPrice ??
+          (item.calculatorTypeSnapshot === 'FENCE'
+            ? item.estimatedLineTotal
+            : item.unitPriceSnapshot),
         'data-item-price',
         { type: 'number', min: 0, step: 1 },
       ),

@@ -26,6 +26,13 @@
   const sortOrderInput = document.querySelector('[data-product-sort-order]');
   const dimensionsInput = document.querySelector('[data-product-dimensions]');
   const purposeInput = document.querySelector('[data-product-purpose]');
+  const calculatorTypeInput = document.querySelector('[data-product-calculator-type]');
+  const pavingCalculatorFields = document.querySelector('[data-calculator-paving]');
+  const fenceCalculatorFields = document.querySelector('[data-calculator-fence]');
+  const pavingWasteInput = document.querySelector('[data-product-paving-waste]');
+  const fenceSectionWidthInput = document.querySelector('[data-product-fence-section-width]');
+  const fencePanelHeightInput = document.querySelector('[data-product-fence-panel-height]');
+  const fencePostPriceInput = document.querySelector('[data-product-fence-post-price]');
   const shortDescriptionInput = document.querySelector('[data-product-short-description]');
   const descriptionInput = document.querySelector('[data-product-description]');
   const seoTitleInput = document.querySelector('[data-product-seo-title]');
@@ -246,6 +253,12 @@
     return Number.isFinite(value) ? value : null;
   }
 
+  function updateCalculatorFields() {
+    const type = String(calculatorTypeInput?.value || 'NONE');
+    if (pavingCalculatorFields) pavingCalculatorFields.hidden = type !== 'PAVING';
+    if (fenceCalculatorFields) fenceCalculatorFields.hidden = type !== 'FENCE';
+  }
+
   function collectVariants() {
     return [...variantList.querySelectorAll('[data-variant-row]')].map((row) => {
       const id = readNumber(row.querySelector('[data-variant-id]'), { nullable: true });
@@ -271,6 +284,11 @@
       unit: String(unitInput?.value || '').trim(),
       dimensions: String(dimensionsInput?.value || '').trim(),
       purpose: String(purposeInput?.value || '').trim(),
+      calculatorType: String(calculatorTypeInput?.value || 'NONE'),
+      pavingWastePercent: readNumber(pavingWasteInput, { nullable: true }) ?? 7,
+      fenceSectionWidth: readNumber(fenceSectionWidthInput, { nullable: true }),
+      fencePanelHeight: readNumber(fencePanelHeightInput, { nullable: true }),
+      fencePostPrice: readNumber(fencePostPriceInput, { nullable: true }),
       seoTitle: String(seoTitleInput?.value || '').trim(),
       seoDescription: String(seoDescriptionInput?.value || '').trim(),
       categoryId: readNumber(categoryInput),
@@ -285,6 +303,24 @@
       return 'Заполните название, slug, категорию и единицу измерения.';
     }
     if (!payload.variants.length) return 'Добавьте хотя бы один вариант.';
+    if (
+      !Number.isFinite(payload.pavingWastePercent) ||
+      payload.pavingWastePercent < 0 ||
+      payload.pavingWastePercent > 50
+    ) {
+      return 'Запас плитки должен быть от 0 до 50%.';
+    }
+    if (payload.calculatorType === 'FENCE') {
+      if (!Number.isFinite(payload.fenceSectionWidth) || payload.fenceSectionWidth <= 0) {
+        return 'Укажите ширину секции забора.';
+      }
+      if (!Number.isFinite(payload.fencePanelHeight) || payload.fencePanelHeight <= 0) {
+        return 'Укажите высоту одной заборной плиты.';
+      }
+      if (!Number.isInteger(payload.fencePostPrice) || payload.fencePostPrice < 0) {
+        return 'Укажите цену одного столба целым числом.';
+      }
+    }
     for (const [index, variant] of payload.variants.entries()) {
       if (!variant.name || !Number.isInteger(variant.price) || variant.price < 0) {
         return `Проверьте название и цену варианта ${index + 1}.`;
@@ -305,6 +341,12 @@
     sortOrderInput.value = String(product.sortOrder ?? 100);
     dimensionsInput.value = product.dimensions || '';
     purposeInput.value = product.purpose || '';
+    calculatorTypeInput.value = product.calculatorType || 'NONE';
+    pavingWasteInput.value = String(product.pavingWastePercent ?? 7);
+    fenceSectionWidthInput.value = product.fenceSectionWidth ?? '';
+    fencePanelHeightInput.value = product.fencePanelHeight ?? '';
+    fencePostPriceInput.value = product.fencePostPrice ?? '';
+    updateCalculatorFields();
     shortDescriptionInput.value = product.shortDescription || '';
     descriptionInput.value = product.description || '';
     seoTitleInput.value = product.seoTitle || '';
@@ -654,6 +696,12 @@
       if (sortOrderInput) sortOrderInput.value = '100';
       if (dimensionsInput) dimensionsInput.value = '';
       if (purposeInput) purposeInput.value = '';
+      if (calculatorTypeInput) calculatorTypeInput.value = 'NONE';
+      if (pavingWasteInput) pavingWasteInput.value = '7';
+      if (fenceSectionWidthInput) fenceSectionWidthInput.value = '';
+      if (fencePanelHeightInput) fencePanelHeightInput.value = '';
+      if (fencePostPriceInput) fencePostPriceInput.value = '';
+      updateCalculatorFields();
       if (shortDescriptionInput) shortDescriptionInput.value = '';
       if (descriptionInput) descriptionInput.value = '';
       if (seoTitleInput) seoTitleInput.value = '';
@@ -687,6 +735,7 @@
     slugInput.value = slugify(slugInput.value);
     updateEditorIdentity();
   });
+  calculatorTypeInput?.addEventListener('change', updateCalculatorFields);
 
   imageInput?.addEventListener('change', () => uploadFiles(imageInput.files || []));
   for (const type of ['dragenter', 'dragover']) {

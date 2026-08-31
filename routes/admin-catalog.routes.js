@@ -93,6 +93,17 @@ const nullableThicknessSchema = z.preprocess(
   z.number().int().min(1).max(1000).nullable(),
 );
 
+const nullablePositiveNumberSchema = (max) =>
+  z.preprocess(
+    (value) => (value === '' || value === undefined ? null : value),
+    z.number().finite().positive().max(max).nullable(),
+  );
+
+const nullablePriceSchema = z.preprocess(
+  (value) => (value === '' || value === undefined ? null : value),
+  z.number().int().min(0).max(MAX_PRICE).nullable(),
+);
+
 const VARIANT_COLOR_PALETTE = Object.freeze({
   '': null,
   'Белый': '#f3f2ed',
@@ -141,6 +152,11 @@ const productPayloadSchema = z
     unit: z.string().trim().min(1).max(40),
     dimensions: z.string().trim().max(160).optional().default(''),
     purpose: z.string().trim().max(300).optional().default(''),
+    calculatorType: z.enum(['NONE', 'PAVING', 'FENCE']).optional().default('NONE'),
+    pavingWastePercent: z.number().finite().min(0).max(50).optional().default(7),
+    fenceSectionWidth: nullablePositiveNumberSchema(1000).optional().default(null),
+    fencePanelHeight: nullablePositiveNumberSchema(20).optional().default(null),
+    fencePostPrice: nullablePriceSchema.optional().default(null),
     seoTitle: z.string().trim().max(180).optional().default(''),
     seoDescription: z.string().trim().max(320).optional().default(''),
     categoryId: z.number().int().positive(),
@@ -151,13 +167,35 @@ const productPayloadSchema = z
       .min(1)
       .max(MAX_VARIANTS_PER_PRODUCT),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (value.calculatorType !== 'FENCE') return;
+
+    for (const [field, fieldValue] of [
+      ['fenceSectionWidth', value.fenceSectionWidth],
+      ['fencePanelHeight', value.fencePanelHeight],
+      ['fencePostPrice', value.fencePostPrice],
+    ]) {
+      if (fieldValue === null) {
+        context.addIssue({
+          code: 'custom',
+          path: [field],
+          message: 'обязательное поле для калькулятора забора',
+        });
+      }
+    }
+  });
 
 const PRODUCT_FIELD_LABELS = {
   title: 'название',
   slug: 'slug',
   categoryId: 'категория',
   unit: 'единица измерения',
+  calculatorType: 'тип расчёта',
+  pavingWastePercent: 'запас плитки',
+  fenceSectionWidth: 'ширина секции забора',
+  fencePanelHeight: 'высота заборной плиты',
+  fencePostPrice: 'цена столба',
   variants: 'варианты',
   name: 'название варианта',
   sku: 'SKU',
@@ -407,6 +445,11 @@ function buildProductData(payload) {
     unit: payload.unit,
     dimensions: payload.dimensions,
     purpose: payload.purpose,
+    calculatorType: payload.calculatorType,
+    pavingWastePercent: payload.pavingWastePercent,
+    fenceSectionWidth: payload.fenceSectionWidth,
+    fencePanelHeight: payload.fencePanelHeight,
+    fencePostPrice: payload.fencePostPrice,
     seoTitle: payload.seoTitle,
     seoDescription: payload.seoDescription,
     categoryId: payload.categoryId,
