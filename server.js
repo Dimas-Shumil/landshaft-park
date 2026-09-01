@@ -177,6 +177,7 @@ const calculateLimiter = rateLimit({
 
 const ORDER_MAX_ITEMS = 50;
 const ORDER_MAX_ESTIMATED_TOTAL = 2_000_000_000;
+const FENCE_LAYOUT_EPSILON = 1e-9;
 
 const orderCalculationSchema = z.discriminatedUnion('type', [
   z
@@ -404,6 +405,8 @@ function calculateConfiguredOrderItem(product, variant, item) {
   const height = roundOrderMeasurement(calculation.height);
   const sectionWidth = Number(product.fenceSectionWidth);
   const panelHeight = Number(product.fencePanelHeight);
+  const postWidth = Number(product.fencePostWidth);
+  const postHeight = Number(product.fencePostHeight);
   const postPrice = product.fencePostPrice;
 
   if (
@@ -411,25 +414,49 @@ function calculateConfiguredOrderItem(product, variant, item) {
     sectionWidth <= 0 ||
     !Number.isFinite(panelHeight) ||
     panelHeight <= 0 ||
+    !Number.isFinite(postWidth) ||
+    postWidth <= 0 ||
+    !Number.isFinite(postHeight) ||
+    postHeight <= 0 ||
     !Number.isSafeInteger(postPrice) ||
     postPrice < 0
   ) {
     return { error: 'Для забора не заполнены технические параметры расчёта.' };
   }
 
-  const sections = Math.ceil(length / sectionWidth);
+  if (height > postHeight) {
+    return { error: 'Указанная высота забора превышает высоту столба.' };
+  }
+
+  const sections = Math.max(
+    1,
+    Math.ceil(
+      (length - postWidth) / (sectionWidth + postWidth) -
+        FENCE_LAYOUT_EPSILON,
+    ),
+  );
   const panelsPerSection = Math.ceil(height / panelHeight);
   const panels = sections * panelsPerSection;
   const posts = sections + 1;
+  const configuredLength = roundOrderMeasurement(
+    sections * sectionWidth + posts * postWidth,
+  );
   const hasPanelPrice = variant.price > 0;
   const panelsTotal = hasPanelPrice ? panels * variant.price : 0;
   const postsTotal = posts * postPrice;
   const estimatedLineTotal = hasPanelPrice ? panelsTotal + postsTotal : 0;
 
   if (
-    ![sections, panelsPerSection, panels, posts, panelsTotal, postsTotal, estimatedLineTotal].every(
-      Number.isSafeInteger,
-    ) ||
+    ![
+      sections,
+      panelsPerSection,
+      panels,
+      posts,
+      panelsTotal,
+      postsTotal,
+      estimatedLineTotal,
+    ].every(Number.isSafeInteger) ||
+    !Number.isFinite(configuredLength) ||
     estimatedLineTotal < 0 ||
     estimatedLineTotal > ORDER_MAX_ESTIMATED_TOTAL
   ) {
@@ -446,6 +473,9 @@ function calculateConfiguredOrderItem(product, variant, item) {
       fenceHeightSnapshot: height,
       fenceSectionWidthSnapshot: sectionWidth,
       fencePanelHeightSnapshot: panelHeight,
+      fencePostWidthSnapshot: postWidth,
+      fencePostHeightSnapshot: postHeight,
+      fenceConfiguredLengthSnapshot: configuredLength,
       fenceSectionsSnapshot: sections,
       fencePanelsPerSectionSnapshot: panelsPerSection,
       fencePanelsSnapshot: panels,
@@ -1019,7 +1049,7 @@ function getOrderCalculationTextLines(item) {
     const total = item.unitPriceSnapshot > 0
       ? formatOrderMoney(item.estimatedLineTotal)
       : 'Уточнит менеджер';
-    return [
+    const lines = [
       'Тип расчёта: забор',
       `Длина забора: ${formatOrderNumber(item.fenceLengthSnapshot)} м`,
       `Высота забора: ${formatOrderNumber(item.fenceHeightSnapshot)} м`,
@@ -1030,6 +1060,27 @@ function getOrderCalculationTextLines(item) {
       `Стоимость столбов: ${formatOrderMoney(item.fencePostsTotalSnapshot)}`,
       `Ориентировочная стоимость: ${total}`,
     ];
+
+    if (Number(item.fenceConfiguredLengthSnapshot) > 0) {
+      lines.splice(
+        3,
+        0,
+        `Расчётная длина комплекта: ${formatOrderNumber(item.fenceConfiguredLengthSnapshot)} м`,
+      );
+    }
+
+    if (
+      Number(item.fencePostWidthSnapshot) > 0 &&
+      Number(item.fencePostHeightSnapshot) > 0
+    ) {
+      lines.splice(
+        Number(item.fenceConfiguredLengthSnapshot) > 0 ? 4 : 3,
+        0,
+        `Размер столба: ${formatOrderNumber(item.fencePostWidthSnapshot)} × ${formatOrderNumber(item.fencePostHeightSnapshot)} м`,
+      );
+    }
+
+    return lines;
   }
 
   return [];
@@ -1507,6 +1558,8 @@ app.get('/api/catalog/products', async (req, res, next) => {
         pavingWastePercent: true,
         fenceSectionWidth: true,
         fencePanelHeight: true,
+        fencePostWidth: true,
+        fencePostHeight: true,
         fencePostPrice: true,
 
         sortOrder: true,
@@ -1611,6 +1664,8 @@ app.get('/api/catalog/products', async (req, res, next) => {
           fence: {
             sectionWidth: product.fenceSectionWidth,
             panelHeight: product.fencePanelHeight,
+            postWidth: product.fencePostWidth,
+            postHeight: product.fencePostHeight,
             postPrice: product.fencePostPrice,
           },
         },
@@ -1674,6 +1729,8 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
         pavingWastePercent: true,
         fenceSectionWidth: true,
         fencePanelHeight: true,
+        fencePostWidth: true,
+        fencePostHeight: true,
         fencePostPrice: true,
 
         seoTitle: true,
@@ -1768,6 +1825,8 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
           fence: {
             sectionWidth: product.fenceSectionWidth,
             panelHeight: product.fencePanelHeight,
+            postWidth: product.fencePostWidth,
+            postHeight: product.fencePostHeight,
             postPrice: product.fencePostPrice,
           },
         },
@@ -2118,6 +2177,8 @@ app.post(
               pavingWastePercent: true,
               fenceSectionWidth: true,
               fencePanelHeight: true,
+              fencePostWidth: true,
+              fencePostHeight: true,
               fencePostPrice: true,
               isPublished: true,
               images: {
@@ -2299,6 +2360,9 @@ app.post(
                 fenceHeightSnapshot: true,
                 fenceSectionWidthSnapshot: true,
                 fencePanelHeightSnapshot: true,
+                fencePostWidthSnapshot: true,
+                fencePostHeightSnapshot: true,
+                fenceConfiguredLengthSnapshot: true,
                 fenceSectionsSnapshot: true,
                 fencePanelsPerSectionSnapshot: true,
                 fencePanelsSnapshot: true,

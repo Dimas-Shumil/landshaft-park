@@ -117,6 +117,8 @@ model Product {
   pavingWastePercent Float                 @default(7)
   fenceSectionWidth  Float?
   fencePanelHeight   Float?
+  fencePostWidth     Float?
+  fencePostHeight    Float?
   fencePostPrice     Int?
 
   seoTitle       String @default("")
@@ -303,6 +305,9 @@ model OrderItem {
   fenceHeightSnapshot           Float?
   fenceSectionWidthSnapshot     Float?
   fencePanelHeightSnapshot      Float?
+  fencePostWidthSnapshot        Float?
+  fencePostHeightSnapshot       Float?
+  fenceConfiguredLengthSnapshot Float?
   fenceSectionsSnapshot         Int?
   fencePanelsPerSectionSnapshot Int?
   fencePanelsSnapshot           Int?

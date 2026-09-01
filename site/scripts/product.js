@@ -2,6 +2,7 @@
 
 const PRODUCT_CART_KEY = 'landshaftParkCart';
 const PRODUCT_MAX_ESTIMATED_TOTAL = 2_000_000_000;
+const FENCE_LAYOUT_EPSILON = 1e-9;
 
 const productView = document.querySelector('[data-product-view]');
 
@@ -482,6 +483,8 @@ function updateFenceCalculation() {
 
   const sectionWidth = Number(currentProduct?.calculator?.fence?.sectionWidth);
   const panelHeight = Number(currentProduct?.calculator?.fence?.panelHeight);
+  const postWidth = Number(currentProduct?.calculator?.fence?.postWidth);
+  const postHeight = Number(currentProduct?.calculator?.fence?.postHeight);
   const postPriceValue = currentProduct?.calculator?.fence?.postPrice;
   const postPrice = postPriceValue === null ? null : Number(postPriceValue);
   const panelPrice = Number(selectedVariant?.price);
@@ -491,6 +494,10 @@ function updateFenceCalculation() {
     sectionWidth <= 0 ||
     !Number.isFinite(panelHeight) ||
     panelHeight <= 0 ||
+    !Number.isFinite(postWidth) ||
+    postWidth <= 0 ||
+    !Number.isFinite(postHeight) ||
+    postHeight <= 0 ||
     !Number.isInteger(postPrice) ||
     postPrice < 0
   ) {
@@ -498,12 +505,31 @@ function updateFenceCalculation() {
     return;
   }
 
-  const sections = Math.ceil(length / sectionWidth);
+  if (height > postHeight) {
+    showCalculatorMessage(
+      `Высота забора не должна превышать ${formatMeasurement(postHeight)} м — высоту столба.`,
+    );
+    return;
+  }
+
+  const sections = Math.max(
+    1,
+    Math.ceil(
+      (length - postWidth) / (sectionWidth + postWidth) -
+        FENCE_LAYOUT_EPSILON,
+    ),
+  );
   const panelsPerSection = Math.ceil(height / panelHeight);
   const panels = sections * panelsPerSection;
   const posts = sections + 1;
+  const configuredLength = roundMeasurement(
+    sections * sectionWidth + posts * postWidth,
+  );
 
-  if (![sections, panelsPerSection, panels, posts].every(Number.isSafeInteger)) {
+  if (
+    ![sections, panelsPerSection, panels, posts].every(Number.isSafeInteger) ||
+    !Number.isFinite(configuredLength)
+  ) {
     showCalculatorMessage('Получилось слишком большое количество элементов. Уменьшите длину или высоту.');
     return;
   }
@@ -530,6 +556,9 @@ function updateFenceCalculation() {
     height: roundMeasurement(height),
     sectionWidth,
     panelHeight,
+    postWidth,
+    postHeight,
+    configuredLength,
     sections,
     panelsPerSection,
     panels,
@@ -545,9 +574,10 @@ function updateFenceCalculation() {
     [
       { label: 'Длина забора', value: `${formatMeasurement(length)} м` },
       { label: 'Высота', value: `${formatMeasurement(height)} м` },
+      { label: 'Расчётная длина', value: `${formatMeasurement(configuredLength)} м` },
       { label: 'Пролётов', value: `${sections} шт.` },
       { label: 'Заборных плит', value: `${panels} шт.` },
-      { label: 'Столбов', value: `${posts} шт.` },
+      { label: 'Столбов', value: `${posts} шт. (${formatMeasurement(postWidth)} × ${formatMeasurement(postHeight)} м)` },
       { label: 'Стоимость плит', value: panelsTotal === null ? 'По запросу' : `${formatPrice(panelsTotal)} ₽` },
       { label: 'Стоимость столбов', value: `${formatPrice(postsTotal)} ₽` },
       { label: 'Ориентировочная стоимость', value: total === null ? 'Уточнит менеджер' : `${formatPrice(total)} ₽`, strong: true },
@@ -924,6 +954,9 @@ function addToCart() {
   );
 
   if (existingItem) {
+    existingItem.price = selectedVariant.price;
+    existingItem.calculation = calculation;
+    existingItem.calculationKey = calculationKey;
     existingItem.quantity = area || calculation
       ? 1
       : (Number(existingItem.quantity) || 1) + 1;

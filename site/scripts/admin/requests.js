@@ -676,6 +676,23 @@
         'Размер забора',
         `${formatNumber(item.fenceLengthSnapshot)} × ${formatNumber(item.fenceHeightSnapshot)} м`,
       );
+      if (Number(item.fenceConfiguredLengthSnapshot) > 0) {
+        appendDetailValue(
+          snapshot,
+          'Расчётная длина',
+          `${formatNumber(item.fenceConfiguredLengthSnapshot)} м`,
+        );
+      }
+      if (
+        Number(item.fencePostWidthSnapshot) > 0 &&
+        Number(item.fencePostHeightSnapshot) > 0
+      ) {
+        appendDetailValue(
+          snapshot,
+          'Размер столба',
+          `${formatNumber(item.fencePostWidthSnapshot)} × ${formatNumber(item.fencePostHeightSnapshot)} м`,
+        );
+      }
       appendDetailValue(snapshot, 'Пролётов', `${item.fenceSectionsSnapshot} шт.`);
       appendDetailValue(snapshot, 'Заборных плит', `${item.fencePanelsSnapshot} шт.`);
       appendDetailValue(snapshot, 'Столбов', `${item.fencePostsSnapshot} шт.`);

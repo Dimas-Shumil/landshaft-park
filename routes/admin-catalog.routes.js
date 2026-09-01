@@ -156,6 +156,8 @@ const productPayloadSchema = z
     pavingWastePercent: z.number().finite().min(0).max(50).optional().default(7),
     fenceSectionWidth: nullablePositiveNumberSchema(1000).optional().default(null),
     fencePanelHeight: nullablePositiveNumberSchema(20).optional().default(null),
+    fencePostWidth: nullablePositiveNumberSchema(10).optional().default(null),
+    fencePostHeight: nullablePositiveNumberSchema(20).optional().default(null),
     fencePostPrice: nullablePriceSchema.optional().default(null),
     seoTitle: z.string().trim().max(180).optional().default(''),
     seoDescription: z.string().trim().max(320).optional().default(''),
@@ -174,6 +176,8 @@ const productPayloadSchema = z
     for (const [field, fieldValue] of [
       ['fenceSectionWidth', value.fenceSectionWidth],
       ['fencePanelHeight', value.fencePanelHeight],
+      ['fencePostWidth', value.fencePostWidth],
+      ['fencePostHeight', value.fencePostHeight],
       ['fencePostPrice', value.fencePostPrice],
     ]) {
       if (fieldValue === null) {
@@ -193,8 +197,10 @@ const PRODUCT_FIELD_LABELS = {
   unit: 'единица измерения',
   calculatorType: 'тип расчёта',
   pavingWastePercent: 'запас плитки',
-  fenceSectionWidth: 'ширина секции забора',
+  fenceSectionWidth: 'ширина плиты / пролёта',
   fencePanelHeight: 'высота заборной плиты',
+  fencePostWidth: 'ширина столба',
+  fencePostHeight: 'высота столба',
   fencePostPrice: 'цена столба',
   variants: 'варианты',
   name: 'название варианта',
@@ -449,6 +455,8 @@ function buildProductData(payload) {
     pavingWastePercent: payload.pavingWastePercent,
     fenceSectionWidth: payload.fenceSectionWidth,
     fencePanelHeight: payload.fencePanelHeight,
+    fencePostWidth: payload.fencePostWidth,
+    fencePostHeight: payload.fencePostHeight,
     fencePostPrice: payload.fencePostPrice,
     seoTitle: payload.seoTitle,
     seoDescription: payload.seoDescription,

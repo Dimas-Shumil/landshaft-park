@@ -253,7 +253,7 @@
           ? `
             <p class="cart-item__area">
               Забор ${escapeHtml(item.calculation.length)} × ${escapeHtml(item.calculation.height)} м:
-              <strong>${escapeHtml(item.calculation.panels)} плит, ${escapeHtml(item.calculation.posts)} столбов</strong>
+              <strong>${escapeHtml(item.calculation.panels)} плит, ${escapeHtml(item.calculation.posts)} столбов ${item.calculation.postWidth && item.calculation.postHeight ? `(${escapeHtml(item.calculation.postWidth)} × ${escapeHtml(item.calculation.postHeight)} м)` : ''}</strong>
             </p>
           `
           : item.area

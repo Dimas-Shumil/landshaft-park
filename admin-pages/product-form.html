@@ -201,16 +201,24 @@
                 <div class="admin-calculator-fields" data-calculator-fence hidden>
                   <div class="admin-calculator-fields__head">
                     <strong>Забор</strong>
-                    <span>Цена варианта считается ценой одной заборной плиты.</span>
+                    <span>Цена варианта считается ценой одной заборной плиты. Ширина столбов учитывается в общей длине забора.</span>
                   </div>
                   <div class="admin-form-grid admin-form-grid--3">
                     <label class="admin-form-field">
-                      <span>Ширина секции, м *</span>
+                      <span>Ширина плиты / пролёта, м *</span>
                       <input type="number" min="0.01" max="1000" step="0.01" placeholder="2" data-product-fence-section-width />
                     </label>
                     <label class="admin-form-field">
                       <span>Высота плиты, м *</span>
                       <input type="number" min="0.01" max="20" step="0.01" placeholder="0.5" data-product-fence-panel-height />
+                    </label>
+                    <label class="admin-form-field">
+                      <span>Ширина столба, м *</span>
+                      <input type="number" min="0.01" max="10" step="0.01" placeholder="0.4" data-product-fence-post-width />
+                    </label>
+                    <label class="admin-form-field">
+                      <span>Высота столба, м *</span>
+                      <input type="number" min="0.01" max="20" step="0.01" placeholder="2.5" data-product-fence-post-height />
                     </label>
                     <label class="admin-form-field">
                       <span>Цена столба, ₽ *</span>

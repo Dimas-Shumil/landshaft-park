@@ -32,6 +32,8 @@
   const pavingWasteInput = document.querySelector('[data-product-paving-waste]');
   const fenceSectionWidthInput = document.querySelector('[data-product-fence-section-width]');
   const fencePanelHeightInput = document.querySelector('[data-product-fence-panel-height]');
+  const fencePostWidthInput = document.querySelector('[data-product-fence-post-width]');
+  const fencePostHeightInput = document.querySelector('[data-product-fence-post-height]');
   const fencePostPriceInput = document.querySelector('[data-product-fence-post-price]');
   const shortDescriptionInput = document.querySelector('[data-product-short-description]');
   const descriptionInput = document.querySelector('[data-product-description]');
@@ -288,6 +290,8 @@
       pavingWastePercent: readNumber(pavingWasteInput, { nullable: true }) ?? 7,
       fenceSectionWidth: readNumber(fenceSectionWidthInput, { nullable: true }),
       fencePanelHeight: readNumber(fencePanelHeightInput, { nullable: true }),
+      fencePostWidth: readNumber(fencePostWidthInput, { nullable: true }),
+      fencePostHeight: readNumber(fencePostHeightInput, { nullable: true }),
       fencePostPrice: readNumber(fencePostPriceInput, { nullable: true }),
       seoTitle: String(seoTitleInput?.value || '').trim(),
       seoDescription: String(seoDescriptionInput?.value || '').trim(),
@@ -317,6 +321,12 @@
       if (!Number.isFinite(payload.fencePanelHeight) || payload.fencePanelHeight <= 0) {
         return 'Укажите высоту одной заборной плиты.';
       }
+      if (!Number.isFinite(payload.fencePostWidth) || payload.fencePostWidth <= 0) {
+        return 'Укажите ширину одного столба.';
+      }
+      if (!Number.isFinite(payload.fencePostHeight) || payload.fencePostHeight <= 0) {
+        return 'Укажите высоту одного столба.';
+      }
       if (!Number.isInteger(payload.fencePostPrice) || payload.fencePostPrice < 0) {
         return 'Укажите цену одного столба целым числом.';
       }
@@ -345,6 +355,8 @@
     pavingWasteInput.value = String(product.pavingWastePercent ?? 7);
     fenceSectionWidthInput.value = product.fenceSectionWidth ?? '';
     fencePanelHeightInput.value = product.fencePanelHeight ?? '';
+    fencePostWidthInput.value = product.fencePostWidth ?? '';
+    fencePostHeightInput.value = product.fencePostHeight ?? '';
     fencePostPriceInput.value = product.fencePostPrice ?? '';
     updateCalculatorFields();
     shortDescriptionInput.value = product.shortDescription || '';
@@ -700,6 +712,8 @@
       if (pavingWasteInput) pavingWasteInput.value = '7';
       if (fenceSectionWidthInput) fenceSectionWidthInput.value = '';
       if (fencePanelHeightInput) fencePanelHeightInput.value = '';
+      if (fencePostWidthInput) fencePostWidthInput.value = '';
+      if (fencePostHeightInput) fencePostHeightInput.value = '';
       if (fencePostPriceInput) fencePostPriceInput.value = '';
       updateCalculatorFields();
       if (shortDescriptionInput) shortDescriptionInput.value = '';
