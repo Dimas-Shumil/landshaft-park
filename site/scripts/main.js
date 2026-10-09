@@ -630,3 +630,47 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Ошибка инициализации сайта:', error);
   });
 });
+
+// Yandex Metrika — счётчик прежнего сайта Landshaft Park.
+// Не учитываем посещения тестового поддомена и локальной разработки.
+function initYandexMetrika() {
+  const productionHosts = ['landshaftpark.ru', 'www.landshaftpark.ru'];
+  if (!productionHosts.includes(window.location.hostname.toLowerCase())) {
+    return;
+  }
+
+  // Защита от повторного подключения при дублирующем импорте main.js.
+  if (window.__landshaftParkMetrikaInitialized) {
+    return;
+  }
+  window.__landshaftParkMetrikaInitialized = true;
+
+  (function (m, e, t, r, i, k, a) {
+    m[i] =
+      m[i] ||
+      function () {
+        (m[i].a = m[i].a || []).push(arguments);
+      };
+
+    m[i].l = 1 * new Date();
+    k = e.createElement(t);
+    a = e.getElementsByTagName(t)[0];
+    k.async = 1;
+    k.src = r;
+    a.parentNode.insertBefore(k, a);
+  })(
+    window,
+    document,
+    'script',
+    'https://mc.yandex.ru/metrika/tag.js',
+    'ym',
+  );
+
+  window.ym(38008850, 'init', {
+    clickmap: true,
+    trackLinks: true,
+    accurateTrackBounce: true,
+  });
+}
+
+initYandexMetrika();
