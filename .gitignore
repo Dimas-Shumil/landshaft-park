@@ -15,6 +15,7 @@ prisma/*.db-journal
 # Загружаемые через админку изображения
 uploads/*
 !uploads/.gitkeep
+/site/images/products/
 
 # Логи
 logs/

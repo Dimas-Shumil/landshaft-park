@@ -15,6 +15,7 @@ const categoryFiltersContainer = document.querySelector(
   '[data-category-filters]',
 );
 let categoryTabs = [];
+let availableCategories = [];
 
 const colorFiltersContainer = document.querySelector('[data-color-filters]');
 const colorFilterSection = colorFiltersContainer?.closest('.catalog-filter');
@@ -397,6 +398,11 @@ function syncCategoryUI(category) {
     const isActive = button.dataset.categoryTab === category;
 
     button.classList.toggle('is-active', isActive);
+    if (isActive) {
+      button.setAttribute('aria-current', 'page');
+    } else {
+      button.removeAttribute('aria-current');
+    }
   });
 
   const categoryInput = filtersForm.querySelector(
@@ -413,24 +419,36 @@ function renderCategories() {
     return;
   }
 
-  const categories = [
-    ...new Set(
-      catalogProducts.map((product) => product.category?.name).filter(Boolean),
-    ),
-  ];
+  // Берём только категории, где есть доступные в каталоге товары.
+  availableCategories = [...new Map(
+    catalogProducts
+      .map((product) => product.category)
+      .filter((category) => category?.name && category?.slug)
+      .map((category) => [category.slug, category]),
+  ).values()];
+
+  const currentSlug = window.location.pathname.match(
+    /^\/catalog\/([a-z0-9]+(?:-[a-z0-9]+)*)$/,
+  )?.[1];
+  const selectedCategory = availableCategories.find(
+    (category) => category.slug === currentSlug,
+  ) || availableCategories[0];
 
   categoryTabsContainer.innerHTML = '';
   categoryFiltersContainer.innerHTML = '';
 
-  categories.forEach((category, index) => {
-    const button = document.createElement('button');
+  availableCategories.forEach((category) => {
+    const button = document.createElement('a');
     button.className = 'catalog-categories__button';
-    button.type = 'button';
-    button.dataset.categoryTab = category;
-    button.textContent = category;
+    button.href = `/catalog/${encodeURIComponent(category.slug)}`;
+    button.dataset.categoryTab = category.name;
+    button.textContent = category.name;
 
-    if (index === 0) {
+    const isSelected = category.slug === selectedCategory?.slug;
+
+    if (isSelected) {
       button.classList.add('is-active');
+      button.setAttribute('aria-current', 'page');
     }
 
     categoryTabsContainer.append(button);
@@ -438,31 +456,14 @@ function renderCategories() {
     const label = document.createElement('label');
     label.className = 'catalog-check';
     label.innerHTML = `
-      <input type="radio" name="category" value="${escapeHtml(category)}" ${index === 0 ? 'checked' : ''}>
-      <span>${escapeHtml(category)}</span>
+      <input type="radio" name="category" value="${escapeHtml(category.name)}" ${isSelected ? 'checked' : ''}>
+      <span>${escapeHtml(category.name)}</span>
     `;
 
     categoryFiltersContainer.append(label);
   });
 
-  categoryTabs = [...document.querySelectorAll('[data-category-tab]')];
-
-  categoryTabs.forEach((button) => {
-    button.addEventListener('click', () => {
-      const category = button.dataset.categoryTab;
-      const input = filtersForm.querySelector(
-        `input[name="category"][value="${CSS.escape(category)}"]`,
-      );
-
-      if (input) {
-        input.checked = true;
-      }
-
-      syncCategoryUI(category);
-      renderDynamicFilters();
-      renderCatalog();
-    });
-  });
+  categoryTabs = [...categoryTabsContainer.querySelectorAll('[data-category-tab]')];
 }
 
 function renderColors() {
@@ -668,8 +669,14 @@ function showCatalogLoadError(error) {
 
 filtersForm.addEventListener('change', (event) => {
   if (event.target.matches('input[name="category"]')) {
-    syncCategoryUI(event.target.value);
-    renderDynamicFilters();
+    const category = availableCategories.find(
+      (item) => item.name === event.target.value,
+    );
+
+    if (category) {
+      window.location.assign(`/catalog/${encodeURIComponent(category.slug)}`);
+      return;
+    }
   }
 
   renderCatalog();
@@ -708,23 +715,6 @@ rangeMaxInput.addEventListener('input', () => {
 });
 
 sortSelect.addEventListener('change', renderCatalog);
-
-categoryTabs.forEach((button) => {
-  button.addEventListener('click', () => {
-    const category = button.dataset.categoryTab;
-
-    const input = filtersForm.querySelector(
-      `input[name="category"][value="${CSS.escape(category)}"]`,
-    );
-
-    if (input) {
-      input.checked = true;
-    }
-
-    syncCategoryUI(category);
-    renderCatalog();
-  });
-});
 
 grid.addEventListener('click', (event) => {
   const button = event.target.closest('[data-add-to-cart]');

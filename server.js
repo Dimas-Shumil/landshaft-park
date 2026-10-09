@@ -1483,6 +1483,39 @@ app.use(
 
 // static
 
+// Известные адреса старого WordPress: только точные соответствия.
+// Неподтверждённые URL не перенаправляем на несвязанные разделы.
+const legacyRedirects = new Map([
+  ['/produkciya', '/catalog'],
+  ['/trotuarnaya-plitka', '/catalog/trotuarnaya-plitka'],
+  ['/dekorativnye-zabory', '/catalog/dekorativnye-zabory'],
+  ['/bordyurnye-ograzhdeniya', '/catalog/dekorativnye-zabory'],
+  ['/sadovye-skulptury', '/catalog/sadovye-skulptury'],
+  ['/dekorativnye-vazony', '/catalog/dekorativnye-vazony'],
+  ['/rub/roadstone', '/catalog/trotuarnaya-plitka'],
+  ['/rub/vazon', '/catalog/dekorativnye-vazony'],
+  ['/contact', '/contacts'],
+]);
+
+app.use((req, res, next) => {
+  if (!['GET', 'HEAD'].includes(req.method)) {
+    return next();
+  }
+
+  const pathname = req.path.replace(/\/+$/, '').toLowerCase() || '/';
+  const target = legacyRedirects.get(pathname);
+
+  if (!target) {
+    return next();
+  }
+
+  // Оставляем UTM-метки и другие параметры запроса.
+  const queryIndex = req.originalUrl.indexOf('?');
+  const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : '';
+
+  return res.redirect(301, `${target}${query}`);
+});
+
 app.get('/index.html', (req, res) => res.redirect(301, '/'));
 app.get('/catalog.html', (req, res) => res.redirect(301, '/catalog'));
 app.get('/contacts.html', (req, res) => res.redirect(301, '/contacts'));
@@ -1503,7 +1536,8 @@ app.use((req, res, next) => {
   if (
     ['GET', 'HEAD'].includes(req.method) &&
     req.path.endsWith('/') &&
-    canonicalPaths.includes(pathname)
+    (canonicalPaths.includes(pathname) ||
+      /^\/catalog\/[a-z0-9]+(?:-[a-z0-9]+)*$/.test(pathname))
   ) {
     const queryIndex = req.originalUrl.indexOf('?');
     const query = queryIndex >= 0 ? req.originalUrl.slice(queryIndex) : '';

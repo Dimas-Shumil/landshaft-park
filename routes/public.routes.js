@@ -51,6 +51,94 @@ const pageTemplates = Object.freeze({
   contacts: loadPageTemplate('contacts.html'),
 });
 
+const publishedProductWhere = {
+  isPublished: true,
+  variants: { some: { isActive: true } },
+};
+
+const catalogSeoProductSelect = {
+  id: true,
+  title: true,
+  slug: true,
+  images: {
+    orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+    select: {
+      imagePath: true,
+      isMain: true,
+    },
+  },
+};
+
+function withServerRenderedCatalog(html, products) {
+  // Товары видны в HTML ещё до выполнения JavaScript. Затем каталог
+  // перерисует карточки с фильтрами, вариантами и кнопками корзины.
+  const cards = products.map((product) => {
+    const url = `/product?slug=${encodeURIComponent(product.slug)}`;
+    const image = product.images?.find((item) => item.isMain) ||
+      product.images?.[0] || null;
+    const imageMarkup = image?.imagePath
+      ? `<img src="${escapeHtml(image.imagePath)}" alt="${escapeHtml(product.title)}" loading="lazy" />`
+      : '';
+
+    return `<article class="catalog-card"><a class="catalog-card__image" href="${url}" aria-label="${escapeHtml(product.title)}">${imageMarkup}</a><div class="catalog-card__content"><a class="catalog-card__title" href="${url}">${escapeHtml(product.title)}</a></div></article>`;
+  }).join('');
+
+  return html.replace(
+    '<div class="catalog-grid" data-products-grid></div>',
+    `<div class="catalog-grid" data-products-grid>${cards}</div>`,
+  );
+}
+
+function renderCategoryCatalog(category, products) {
+  const pathname = `/catalog/${category.slug}`;
+  const canonical = createPublicUrl(pathname);
+  const title = category.seoTitle ||
+    `${category.name} в Черногорске | Ландшафт Парк`;
+  const description = category.seoDescription ||
+    `${category.name} от производителя «Ландшафт Парк» в Черногорске. Характеристики, варианты и цены.`;
+
+  const html = pageTemplates.catalog
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`)
+    .replace(
+      /<meta\s+name="description"[\s\S]*?\/\s*>/i,
+      `<meta name="description" content="${escapeHtml(description)}" />`,
+    )
+    .replace(
+      /<link rel="canonical"[^>]*>/i,
+      `<link rel="canonical" href="${escapeHtml(canonical)}" />`,
+    )
+    .replace(
+      /<meta property="og:title"[\s\S]*?\/\s*>/i,
+      `<meta property="og:title" content="${escapeHtml(title)}" />`,
+    )
+    .replace(
+      /<meta property="og:description"[\s\S]*?\/\s*>/i,
+      `<meta property="og:description" content="${escapeHtml(description)}" />`,
+    )
+    .replace(
+      /<meta property="og:url"[^>]*>/i,
+      `<meta property="og:url" content="${escapeHtml(canonical)}" />`,
+    )
+    .replace(
+      /<meta\s+name="twitter:title"[\s\S]*?\/\s*>/i,
+      `<meta name="twitter:title" content="${escapeHtml(title)}" />`,
+    )
+    .replace(
+      /<meta\s+name="twitter:description"[\s\S]*?\/\s*>/i,
+      `<meta name="twitter:description" content="${escapeHtml(description)}" />`,
+    )
+    .replace(
+      '<span>Каталог</span>',
+      `<a href="/catalog">Каталог</a><span aria-hidden="true">›</span><span>${escapeHtml(category.name)}</span>`,
+    )
+    .replace(
+      '<h1>Каталог тротуарной плитки и элементов благоустройства</h1>',
+      `<h1>${escapeHtml(category.name)}</h1>`,
+    );
+
+  return withServerRenderedCatalog(html, products);
+}
+
 const productSelect = {
   id: true,
   title: true,
@@ -434,14 +522,7 @@ router.get('/robots.txt', (req, res) => {
 router.get('/sitemap.xml', async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
-      where: {
-        isPublished: true,
-        variants: {
-          some: {
-            isActive: true,
-          },
-        },
-      },
+      where: publishedProductWhere,
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
       select: {
         title: true,
@@ -457,8 +538,19 @@ router.get('/sitemap.xml', async (req, res, next) => {
         },
       },
     });
+    const categories = await prisma.productCategory.findMany({
+      where: {
+        isPublished: true,
+        products: { some: publishedProductWhere },
+      },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      select: { slug: true },
+    });
     const staticUrls = ['/', '/catalog', '/contacts']
       .map((pathname) => `<url><loc>${escapeXml(createPublicUrl(pathname))}</loc></url>`)
+      .join('');
+    const categoryUrls = categories
+      .map((category) => `<url><loc>${escapeXml(createPublicUrl(`/catalog/${category.slug}`))}</loc></url>`)
       .join('');
     const productUrls = products
       .map((product) => {
@@ -475,7 +567,7 @@ router.get('/sitemap.xml', async (req, res, next) => {
         return `<url><loc>${escapeXml(location)}</loc><lastmod>${product.updatedAt.toISOString()}</lastmod>${images}</url>`;
       })
       .join('');
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${staticUrls}${productUrls}</urlset>`;
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">${staticUrls}${categoryUrls}${productUrls}</urlset>`;
 
     res
       .type('application/xml')
@@ -500,34 +592,64 @@ router.get('/', (req, res) => {
 router.get('/catalog', async (req, res, next) => {
   try {
     const products = await prisma.product.findMany({
-      where: {
-        isPublished: true,
-        variants: {
-          some: {
-            isActive: true,
-          },
-        },
-      },
+      where: publishedProductWhere,
       orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        images: {
-          orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-          select: {
-            imagePath: true,
-            isMain: true,
-          },
-        },
-      },
+      select: catalogSeoProductSelect,
     });
 
     sendHtml(
       res,
       injectStructuredData(
-        pageTemplates.catalog,
+        withServerRenderedCatalog(pageTemplates.catalog, products),
         getCatalogStructuredData(products),
+        res.locals.cspNonce,
+      ),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/catalog/:slug', async (req, res, next) => {
+  try {
+    const slug = String(req.params.slug || '').trim();
+
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 120) {
+      return next();
+    }
+
+    const category = await prisma.productCategory.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        seoTitle: true,
+        seoDescription: true,
+        isPublished: true,
+      },
+    });
+
+    if (!category || !category.isPublished) {
+      return next();
+    }
+
+    const products = await prisma.product.findMany({
+      where: { ...publishedProductWhere, categoryId: category.id },
+      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
+      select: catalogSeoProductSelect,
+    });
+
+    // Не отдаём индексируемую пустую категорию.
+    if (products.length === 0) {
+      return next();
+    }
+
+    sendHtml(
+      res,
+      injectStructuredData(
+        renderCategoryCatalog(category, products),
+        getCatalogStructuredData(products, category),
         res.locals.cspNonce,
       ),
     );
