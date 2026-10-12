@@ -2928,3 +2928,13 @@ html {
   font-family: "Russo One";
   src: url("../fonts/RussoOne-Regular.ttf") format("truetype");
 }
+
+/* Footer socials: compact icons, no white circles */
+.footer__socials{display:flex;align-items:center;flex-wrap:nowrap;gap:14px}
+.footer__socials a{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:0;padding:0;flex:0 0 32px;border:0;border-radius:0;background:transparent;box-shadow:none}
+.footer__socials a:hover{border-color:transparent;background:transparent;box-shadow:none;transform:translateY(-2px) scale(1.04)}
+.footer__socials a:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:4px;border-radius:6px}
+.footer__socials a:active{transform:scale(.96)}
+.footer__social-icon{display:block;width:28px;height:28px;object-fit:contain;flex:0 0 auto}
+.footer__social-icon--max{width:28px;height:28px;border-radius:7px}
+@media (max-width:520px){.footer__socials{gap:12px}.footer__socials a{width:30px;height:30px;min-height:0;padding:0;flex-basis:30px}.footer__social-icon,.footer__social-icon--max{width:26px;height:26px}}
