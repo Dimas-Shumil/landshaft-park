@@ -3414,3 +3414,5 @@ body.admin-modal-open {
 .admin-login-page [hidden] {
   display: none;
 }
+/* Brand logo integration */
+.admin-brand__mark{display:block;object-fit:contain}

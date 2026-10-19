@@ -44,13 +44,7 @@
   height: 54px;
   flex: 0 0 auto;
 
-  color: $color-primary;
-  fill: currentColor;
-}
-
-.admin-brand__mark path:first-child {
-  color: $color-gold;
-  fill: currentColor;
+  object-fit: contain;
 }
 
 .admin-brand__copy {
@@ -554,7 +548,6 @@
 .admin-brand--sidebar .admin-brand__mark {
   width: 42px;
   height: 42px;
-  color: #ffffff;
 }
 
 .admin-brand--sidebar .admin-brand__copy strong {

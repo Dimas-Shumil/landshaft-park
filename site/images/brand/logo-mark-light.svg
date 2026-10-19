@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 330 300" role="img" aria-labelledby="title">
+  <title id="title">Ландшафт Парк</title>
+  <g fill="#F7F5EE">
+    <polygon points="221,113 166,30 109,114 164,88"/>
+    <polygon points="160,102 97,134 61,194 159,146"/>
+    <polygon points="170,102 171,146 267,194 232,133"/>
+    <polygon points="160,158 83,198 126,218 160,200"/>
+    <polygon points="170,158 170,200 203,218 246,197"/>
+    <polygon points="112,228 71,205 49,217 23,258 92,258"/>
+    <polygon points="216,228 236,258 303,257 279,217 258,205"/>
+  </g>
+  <polygon points="163,213 125,232 108,257 166,284 219,256 203,232" fill="#C9A96B"/>
+</svg>
