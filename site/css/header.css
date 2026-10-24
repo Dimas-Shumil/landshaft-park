@@ -214,17 +214,52 @@ html {
 }
 
 .header__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   flex-shrink: 0;
-  font-family: "Oswald", Arial, sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  min-width: 0;
   color: #1f331f;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, transform 0.3s ease;
 }
 .header__logo:hover {
   color: #3f623f;
+  transform: translateY(-1px);
+}
+
+.header__logo-mark {
+  display: block;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  object-fit: contain;
+}
+
+.header__logo-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.header__logo-copy strong {
+  font-family: "Oswald", Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.header__logo-copy small {
+  color: #c7a96b;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .header__nav {
@@ -498,6 +533,9 @@ html {
   .header__burger {
     display: flex;
   }
+  .header__logo-copy small {
+    display: none;
+  }
 }
 @media (max-width: 760px) {
   .header__container {
@@ -505,7 +543,18 @@ html {
     padding: 0 24px;
   }
   .header__logo {
-    font-size: 24px;
+    gap: 9px;
+  }
+  .header__logo-mark {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+  .header__logo-copy strong {
+    font-size: 22px;
+  }
+  .header__logo-copy small {
+    display: none;
   }
   .mobile-menu {
     padding-top: 70px;
@@ -528,8 +577,13 @@ html {
   .header__container {
     padding: 0 18px;
   }
-  .header__logo {
-    font-size: 22px;
+  .header__logo-mark {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .header__logo-copy strong {
+    font-size: 20px;
   }
   .mobile-menu__inner {
     padding-right: 18px;

@@ -76,4 +76,12 @@ router.get('/catalog.html', (req, res) => {
   return res.redirect(308, '/admin/catalog');
 });
 
+router.get('/settings', requireAdminPage, (req, res) => {
+  return sendAdminPage(res, 'settings.html');
+});
+
+router.get('/settings.html', (req, res) => {
+  return res.redirect(308, '/admin/settings');
+});
+
 module.exports = router;

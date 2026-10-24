@@ -62,6 +62,7 @@ model AdminSession {
 
   userId Int
   user   AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pushSubscriptions AdminPushSubscription[]
 
   tokenHash     String @unique
   csrfTokenHash String
@@ -76,6 +77,20 @@ model AdminSession {
 
   @@index([userId, expiresAt])
   @@index([expiresAt])
+}
+
+model AdminPushSubscription {
+  id Int @id @default(autoincrement())
+  sessionId Int
+  session AdminSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  endpoint String @unique
+  p256dh String
+  auth String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
 }
 
 model ProductCategory {

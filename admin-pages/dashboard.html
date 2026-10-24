@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/site/images/brand/favicon.svg" type="image/svg+xml" />
     <link rel="alternate icon" href="/site/images/brand/favicon.ico" />
-    <link rel="apple-touch-icon" href="/site/images/brand/apple-touch-icon.png" />
     <meta name="robots" content="noindex,nofollow,noarchive" />
+    <link rel="manifest" href="/admin/manifest.webmanifest" />
+    <meta name="theme-color" content="#1f331f" />
+    <link rel="apple-touch-icon" href="/admin/icons/icon-192.png" />
 
     <link rel="stylesheet" href="/site/css/admin.min.css" />
 
@@ -14,6 +16,21 @@
   </head>
 
   <body class="admin-page">
+    <section class="admin-install-banner" data-admin-install-banner aria-label="Установить приложение Ландшафт Парк" hidden>
+      <div class="admin-install-banner__icon" aria-hidden="true">
+        <img src="/admin/icons/icon-192.png" alt="" width="40" height="40" />
+      </div>
+      <div class="admin-install-banner__copy">
+        <strong>Админка всегда под рукой</strong>
+        <span>Установите «Ландшафт Парк» как приложение для быстрого доступа.</span>
+        <span class="admin-install-banner__hint" data-admin-install-hint role="status" aria-live="polite" hidden></span>
+      </div>
+      <button class="admin-install-banner__install" type="button" data-admin-install>Установить</button>
+      <button class="admin-install-banner__close" type="button" data-admin-install-close aria-label="Закрыть предложение об установке">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18" /></svg>
+      </button>
+    </section>
+
     <div class="admin-layout">
       <div class="admin-sidebar-overlay" data-sidebar-overlay></div>
 
@@ -64,6 +81,14 @@
               <path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9" />
             </svg>
             <span>Каталог</span>
+          </a>
+          <a class="admin-nav__item" href="/admin/settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <circle cx="9" cy="7" r="2.5" fill="#1c3c2a" />
+              <circle cx="16" cy="17" r="2.5" fill="#1c3c2a" />
+            </svg>
+            <span>Настройки</span>
           </a>
         </nav>
 
@@ -234,6 +259,7 @@
 
     <div class="admin-toast" data-admin-toast role="status" aria-live="polite"></div>
 
+    <script src="/site/scripts/admin/admin-app.js" defer></script>
     <script src="/site/scripts/admin/dashboard.js" defer></script>
   </body>
 </html>

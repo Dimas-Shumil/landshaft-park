@@ -18,6 +18,8 @@ const adminRouter = require('./routes/admin.routes');
 const authRouter = require('./routes/auth.routes');
 const adminApiRouter = require('./routes/admin-api.routes');
 const adminCatalogRouter = require('./routes/admin-catalog.routes');
+const adminPushRouter = require('./routes/admin-push.routes');
+const { notifyAdmins } = require('./lib/admin-push');
 const { notFoundHandler, errorHandler } = require('./middleware/error-handler');
 
 const app = express();
@@ -1442,6 +1444,8 @@ app.use(
           'https://mc.yandex.com',
           'https://yastatic.net',
         ],
+        // Allow same-origin Service Worker for the admin PWA.
+        workerSrc: ["'self'"],
         connectSrc: [
           "'self'",
           'https://mc.yandex.ru',
@@ -1450,7 +1454,7 @@ app.use(
           'https://mc.webvisor.com',
         ],
         // Для карт кликов и других дополнительных инструментов Метрики.
-        childSrc: ['blob:', 'https://mc.yandex.ru', 'https://mc.yandex.com'],
+        childSrc: ["'self'", 'blob:', 'https://mc.yandex.ru', 'https://mc.yandex.com'],
         frameSrc: ['blob:', 'https://mc.yandex.ru', 'https://mc.yandex.com'],
         styleSrc: ["'self'"],
         upgradeInsecureRequests: isProduction ? [] : null,
@@ -1558,9 +1562,23 @@ app.use(
 app.use('/components', express.static(path.join(__dirname, 'components')));
 app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
+// Installable admin PWA resources are public but contain no customer/session data.
+app.use('/admin', express.static(path.join(__dirname, 'admin-pwa'), {
+  index: false,
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('sw.js') || filePath.endsWith('manifest.webmanifest')) {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+    if (filePath.endsWith('manifest.webmanifest')) {
+      res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    }
+  },
+}));
+
 // admin auth api
 
 app.use('/api/admin/auth', authRouter);
+app.use('/api/admin/push', adminPushRouter);
 app.use('/api/admin/catalog', adminCatalogRouter);
 app.use('/api/admin', adminApiRouter);
 
@@ -2068,6 +2086,14 @@ app.post(
         },
       });
 
+      // Delivery is independent of SMTP and cannot fail a saved request.
+      void notifyAdmins({
+        title: 'Новая заявка на расчёт',
+        body: `Заявка №${request.id}. Откройте админ-панель.`,
+        url: `/admin/requests?open=calculate:${request.id}`,
+        tag: `calculate-${request.id}`,
+      });
+
       const mailRequest = {
         ...request,
 
@@ -2434,6 +2460,14 @@ app.post(
       console.log(
         `Заказ ${order.publicNumber} сохранён: ${customer.name}, ${phone}, позиций: ${order.items.length}`,
       );
+
+      // Notification contains only order identifier, not personal details.
+      void notifyAdmins({
+        title: 'Новый заказ',
+        body: `Заказ ${order.publicNumber}. Откройте админ-панель.`,
+        url: `/admin/requests?open=order:${order.id}`,
+        tag: `order-${order.id}`,
+      });
 
       if (smtpTransporter) {
         try {

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/site/images/brand/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/site/images/brand/favicon.ico" />
+    <meta name="robots" content="noindex,nofollow,noarchive" />
+    <link rel="manifest" href="/admin/manifest.webmanifest" />
+    <meta name="theme-color" content="#1f331f" />
+    <link rel="apple-touch-icon" href="/admin/icons/icon-192.png" />
+    <link rel="stylesheet" href="/site/css/admin.min.css" />
+    <title>Настройки | Ландшафт Парк</title>
+  </head>
+  <body class="admin-page">
+    <section class="admin-install-banner" data-admin-install-banner aria-label="Установить приложение Ландшафт Парк" hidden>
+      <div class="admin-install-banner__icon" aria-hidden="true">
+        <img src="/admin/icons/icon-192.png" alt="" width="40" height="40" />
+      </div>
+      <div class="admin-install-banner__copy">
+        <strong>Админка всегда под рукой</strong>
+        <span>Установите «Ландшафт Парк» как приложение для быстрого доступа.</span>
+        <span class="admin-install-banner__hint" data-admin-install-hint role="status" aria-live="polite" hidden></span>
+      </div>
+      <button class="admin-install-banner__install" type="button" data-admin-install>Установить</button>
+      <button class="admin-install-banner__close" type="button" data-admin-install-close aria-label="Закрыть предложение об установке">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6 18 18M18 6 6 18" /></svg>
+      </button>
+    </section>
+    <div class="admin-layout">
+      <div class="admin-sidebar-overlay" data-sidebar-overlay></div>
+
+      <aside class="admin-sidebar" data-admin-sidebar>
+        <div class="admin-sidebar__top">
+          <a class="admin-brand admin-brand--sidebar" href="/admin" aria-label="Dashboard">
+            <img
+              class="admin-brand__mark"
+              src="/site/images/brand/logo-mark-light.svg"
+              alt=""
+            />
+            <span class="admin-brand__copy">
+              <strong>Ландшафт Парк</strong>
+              <span>Админ-панель</span>
+            </span>
+          </a>
+
+          <button class="admin-sidebar__close" type="button" aria-label="Закрыть меню" data-sidebar-close>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 6 12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="admin-nav" aria-label="Навигация админ-панели">
+          <a class="admin-nav__item" href="/admin">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            <span>Dashboard</span>
+            <i aria-hidden="true"></i>
+          </a>
+
+          <a class="admin-nav__item" href="/admin/requests">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 3h8l4 4v14H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+              <path d="M14 3v5h5M9 12h6M9 16h6" />
+            </svg>
+            <span>Заявки + Заказы</span>
+          </a>
+
+          <a class="admin-nav__item" href="/admin/catalog">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+              <path d="m4.5 7.8 7.5 4.3 7.5-4.3M12 12v9" />
+            </svg>
+            <span>Каталог</span>
+          </a>
+          <a class="admin-nav__item is-active" href="/admin/settings" aria-current="page">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 7h16M4 17h16" />
+              <circle cx="9" cy="7" r="2.5" fill="#1c3c2a" />
+              <circle cx="16" cy="17" r="2.5" fill="#1c3c2a" />
+            </svg>
+            <span>Настройки</span>
+            <i aria-hidden="true"></i>
+          </a>
+        </nav>
+
+        <div class="admin-sidebar__decoration" aria-hidden="true"></div>
+
+        <button class="admin-sidebar__logout" type="button" data-admin-logout>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h5" />
+            <path d="m14 8 4 4-4 4M18 12H8" />
+          </svg>
+          <span>Выйти</span>
+        </button>
+      </aside>
+
+
+      <main class="admin-main">
+        <header class="admin-topbar">
+          <button class="admin-menu-button" type="button" aria-label="Открыть меню" data-sidebar-open>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
+          <div class="admin-topbar__title">
+            <h1>Настройки</h1>
+            <p>Параметры админ-панели и уведомлений</p>
+          </div>
+          <div class="admin-profile">
+            <span class="admin-profile__avatar" data-admin-avatar>А</span>
+            <span class="admin-profile__copy"><strong data-admin-name>Администратор</strong><small>Управление магазином</small></span>
+          </div>
+        </header>
+
+        <div class="admin-content admin-content--settings">
+          <header class="admin-settings__intro">
+            <span class="admin-kicker">Управление приложением</span>
+            <h2>Уведомления</h2>
+            <p>Получайте оповещения о новых заказах и заявках на этом устройстве, даже если админка закрыта.</p>
+          </header>
+          <section class="admin-settings__card" aria-labelledby="admin-notifications-heading">
+            <div class="admin-settings__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" /></svg>
+            </div>
+            <div class="admin-settings__details">
+              <h3 id="admin-notifications-heading">Push-уведомления</h3>
+              <p>Новые заказы и заявки будут приходить в уведомления браузера или установленного приложения.</p>
+              <span class="admin-settings__status" data-admin-push-status role="status" aria-live="polite">Проверяем поддержку уведомлений…</span>
+              <p class="admin-settings__test-note">Тестовая заявка отправляет только проверочное Push-уведомление. Реальная заявка, заказ и письмо не создаются.</p>
+              <span class="admin-settings__test-result" data-admin-push-test-result role="status" aria-live="polite" hidden></span>
+            </div>
+            <div class="admin-settings__actions">
+              <button class="admin-settings__action" data-admin-push-toggle type="button" disabled>Проверяем…</button>
+              <button class="admin-settings__test" data-admin-push-test type="button" disabled>Тестовая заявка</button>
+            </div>
+          </section>
+          <p class="admin-settings__footnote">Настройка действует только на текущем устройстве и браузере. Для уведомлений на другом телефоне или компьютере включите их там отдельно.</p>
+        </div>
+      </main>
+    </div>
+    <div class="admin-toast" data-admin-toast role="status" aria-live="polite"></div>
+    <script src="/site/scripts/admin/admin-app.js" defer></script>
+    <script src="/site/scripts/admin/settings.js" defer></script>
+  </body>
+</html>

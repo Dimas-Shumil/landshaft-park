@@ -214,17 +214,52 @@ html {
 }
 
 .header__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   flex-shrink: 0;
-  font-family: "Oswald", Arial, sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.03em;
+  min-width: 0;
   color: #1f331f;
-  transition: color 0.3s ease;
+  transition: color 0.3s ease, transform 0.3s ease;
 }
 .header__logo:hover {
   color: #3f623f;
+  transform: translateY(-1px);
+}
+
+.header__logo-mark {
+  display: block;
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  object-fit: contain;
+}
+
+.header__logo-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.header__logo-copy strong {
+  font-family: "Oswald", Arial, sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.header__logo-copy small {
+  color: #c7a96b;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .header__nav {
@@ -498,6 +533,9 @@ html {
   .header__burger {
     display: flex;
   }
+  .header__logo-copy small {
+    display: none;
+  }
 }
 @media (max-width: 760px) {
   .header__container {
@@ -505,7 +543,18 @@ html {
     padding: 0 24px;
   }
   .header__logo {
-    font-size: 24px;
+    gap: 9px;
+  }
+  .header__logo-mark {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+  }
+  .header__logo-copy strong {
+    font-size: 22px;
+  }
+  .header__logo-copy small {
+    display: none;
   }
   .mobile-menu {
     padding-top: 70px;
@@ -528,8 +577,13 @@ html {
   .header__container {
     padding: 0 18px;
   }
-  .header__logo {
-    font-size: 22px;
+  .header__logo-mark {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .header__logo-copy strong {
+    font-size: 20px;
   }
   .mobile-menu__inner {
     padding-right: 18px;
@@ -615,6 +669,54 @@ html {
   min-width: 0;
 }
 
+.footer__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  width: fit-content;
+  margin-bottom: 28px;
+  color: #ffffff;
+}
+
+.footer__logo:hover {
+  transform: translateY(-1px);
+}
+
+.footer__logo-mark {
+  display: block;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+  object-fit: contain;
+}
+
+.footer__logo-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.footer__logo-copy strong {
+  color: #ffffff;
+  font-family: "Oswald", Arial, sans-serif;
+  font-size: clamp(29px, 2vw, 38px);
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.footer__logo-copy small {
+  max-width: 215px;
+  color: #c7a96b;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .footer__brand ul {
   display: flex;
   flex-direction: column;
@@ -652,32 +754,35 @@ html {
 
 .footer__socials {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 14px;
 }
 
 .footer__socials a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  min-height: 46px;
+  width: 32px;
+  height: 32px;
+  min-height: 0;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+  flex: 0 0 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 .footer__socials a:hover {
-  border-color: #ffffff;
-  background: #ffffff;
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
-  transform: translateY(-3px);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  transform: translateY(-2px) scale(1.04);
 }
 .footer__socials a:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 3px;
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 4px;
+  border-radius: 6px;
 }
 .footer__socials a:active {
   transform: scale(0.96);
@@ -685,20 +790,16 @@ html {
 
 .footer__social-icon {
   display: block;
-  width: 21px;
-  height: 21px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex: 0 0 auto;
 }
 
 .footer__social-icon--max {
-  width: 25px;
-  height: 25px;
-  border-radius: 6px;
-}
-
-.footer__social-icon--max {
-  border-radius: 5px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
 }
 
 .footer__worktime p {
@@ -830,6 +931,14 @@ html {
   .footer h2 {
     margin-bottom: 24px;
   }
+  .footer__logo {
+    margin-bottom: 24px;
+  }
+  .footer__logo-mark {
+    width: 54px;
+    height: 54px;
+    flex-basis: 54px;
+  }
   .footer h3 {
     margin-bottom: 18px;
     font-size: 21px;
@@ -858,16 +967,35 @@ html {
   .footer h2 {
     font-size: 44px;
   }
+  .footer__logo-mark {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+  }
+  .footer__logo-copy strong {
+    font-size: 28px;
+  }
+  .footer__logo-copy small {
+    max-width: 190px;
+    font-size: 7px;
+  }
   .footer h3 {
     font-size: 20px;
   }
   .footer__socials {
-    gap: 10px;
+    gap: 12px;
   }
   .footer__socials a {
-    min-height: 40px;
-    padding: 0 14px;
-    font-size: 13px;
+    width: 30px;
+    height: 30px;
+    min-height: 0;
+    padding: 0;
+    flex-basis: 30px;
+  }
+  .footer__social-icon,
+  .footer__social-icon--max {
+    width: 26px;
+    height: 26px;
   }
   .footer__cta {
     padding: 22px;
@@ -1789,15 +1917,3 @@ html {
 .catalog-color input:checked + span {
   box-shadow: 0 0 0 2px #1f331f, inset 0 0 0 3px #ffffff;
 }
-
-/* Footer socials: compact icons, no white circles */
-.footer__socials{display:flex;align-items:center;flex-wrap:nowrap;gap:14px}
-.footer__socials a{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;min-height:0;padding:0;flex:0 0 32px;border:0;border-radius:0;background:transparent;box-shadow:none}
-.footer__socials a:hover{border-color:transparent;background:transparent;box-shadow:none;transform:translateY(-2px) scale(1.04)}
-.footer__socials a:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:4px;border-radius:6px}
-.footer__socials a:active{transform:scale(.96)}
-.footer__social-icon{display:block;width:28px;height:28px;object-fit:contain;flex:0 0 auto}
-.footer__social-icon--max{width:28px;height:28px;border-radius:7px}
-@media (max-width:520px){.footer__socials{gap:12px}.footer__socials a{width:30px;height:30px;min-height:0;padding:0;flex-basis:30px}.footer__social-icon,.footer__social-icon--max{width:26px;height:26px}}
-/* Brand logo integration */
-.header__logo{display:inline-flex;align-items:center;gap:12px;flex-shrink:0;min-width:0;color:#1f331f;transition:color .3s ease,transform .3s ease}.header__logo:hover{color:#3f623f;transform:translateY(-1px)}.header__logo-mark{display:block;width:50px;height:50px;flex:0 0 50px;object-fit:contain}.header__logo-copy{display:flex;flex-direction:column;gap:3px;min-width:0}.header__logo-copy strong{font-family:"Oswald",Arial,sans-serif;font-size:28px;font-weight:700;line-height:.9;letter-spacing:-.025em;text-transform:uppercase;white-space:nowrap}.header__logo-copy small{color:#c7a96b;font-size:8px;font-weight:800;line-height:1.05;letter-spacing:.085em;text-transform:uppercase;white-space:nowrap}.footer__logo{display:inline-flex;align-items:center;gap:14px;width:fit-content;margin-bottom:28px;color:#fff}.footer__logo:hover{transform:translateY(-1px)}.footer__logo-mark{display:block;width:58px;height:58px;flex:0 0 58px;object-fit:contain}.footer__logo-copy{display:flex;flex-direction:column;gap:6px}.footer__brand .footer__logo-copy strong{color:#fff;font-family:"Oswald",Arial,sans-serif;font-size:clamp(29px,2vw,38px);font-weight:700;line-height:.9;letter-spacing:-.025em;text-transform:uppercase;white-space:nowrap}.footer__brand .footer__logo-copy small{max-width:215px;color:#c7a96b;font-size:8px;font-weight:800;line-height:1.35;letter-spacing:.1em;text-transform:uppercase}@media(max-width:980px){.header__logo-copy small{display:none}}@media(max-width:760px){.header__logo{gap:9px}.header__logo-mark{width:40px;height:40px;flex-basis:40px}.header__logo-copy strong{font-size:22px}.header__logo-copy small{display:none}.footer__logo{margin-bottom:24px}.footer__logo-mark{width:54px;height:54px;flex-basis:54px}}@media(max-width:480px){.header__logo-mark{width:36px;height:36px;flex-basis:36px}.header__logo-copy strong{font-size:20px}}@media(max-width:520px){.footer__logo-mark{width:48px;height:48px;flex-basis:48px}.footer__brand .footer__logo-copy strong{font-size:28px}.footer__brand .footer__logo-copy small{max-width:190px;font-size:7px}}

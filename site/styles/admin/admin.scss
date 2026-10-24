@@ -3512,3 +3512,111 @@ body.admin-modal-open {
 .admin-login-page [hidden] {
   display: none;
 }
+
+
+// Админ-панель: верхняя плашка установки PWA и страница уведомлений.
+.admin-install-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 13px clamp(16px, 3.5vw, 54px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  background: #1b3929;
+  color: #ffffff;
+  box-shadow: 0 10px 26px rgba(12, 31, 20, 0.16);
+}
+.admin-install-banner__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.09);
+}
+.admin-install-banner__icon img { width: 40px; height: 40px; object-fit: contain; }
+.admin-install-banner__copy { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.admin-install-banner__copy strong { font-size: 13px; font-weight: 800; }
+.admin-install-banner__copy > span { color: rgba(255, 255, 255, 0.75); font-size: 12px; line-height: 1.5; }
+.admin-install-banner__hint { color: #ecd09c; }
+.admin-install-banner__install {
+  min-height: 39px;
+  padding: 9px 19px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(227, 196, 131, 0.6);
+  border-radius: 9px;
+  color: #ffffff;
+  background: #496943;
+  font-size: 12px;
+  font-weight: 800;
+  transition: background-color .2s ease;
+}
+.admin-install-banner__install:hover { background: #5b8053; }
+.admin-install-banner__close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.8);
+}
+.admin-install-banner__close:hover { background: rgba(255, 255, 255, 0.1); }
+.admin-install-banner__close svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-width: 2; }
+.admin-page .admin-sidebar { overflow-y: auto; overscroll-behavior: contain; }
+.admin-page .admin-sidebar__logout { margin-top: auto; }
+.admin-content--settings { max-width: 1220px; }
+.admin-settings__intro { margin: 5px 0 28px; }
+.admin-settings__intro h2 { margin-top: 16px; color: #1f331f; font-family: 'Oswald', sans-serif; font-size: clamp(32px, 4vw, 44px); font-weight: 600; }
+.admin-settings__intro p { margin-top: 10px; max-width: 700px; color: #68736c; font-size: 14px; line-height: 1.7; }
+.admin-settings__card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 28px;
+  border: 1px solid #e8e8e0;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 15px 40px rgba(31, 51, 31, .06);
+}
+.admin-settings__icon { display: grid; place-items: center; width: 54px; height: 54px; flex: 0 0 54px; border-radius: 13px; color: #31593b; background: #edf3eb; }
+.admin-settings__icon svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.admin-settings__details { flex: 1; min-width: 0; }
+.admin-settings__details h3 { color: #1f331f; font-size: 17px; font-weight: 800; }
+.admin-settings__details p { margin-top: 7px; max-width: 610px; color: #67756b; font-size: 13px; line-height: 1.6; }
+.admin-settings__status { display: inline-flex; margin-top: 15px; color: #3d6b44; font-size: 12px; font-weight: 700; line-height: 1.45; overflow-wrap: anywhere; }
+.admin-settings__action { min-width: 148px; min-height: 44px; padding: 11px 16px; border-radius: 9px; color: #ffffff; background: #284a32; font-size: 12px; font-weight: 800; transition: background-color .2s ease; }
+.admin-settings__action:hover:not(:disabled) { background: #416947; }
+.admin-settings__action:disabled { background: #9ca99d; cursor: not-allowed; }
+.admin-settings__footnote { margin-top: 16px; max-width: 800px; color: #7a827a; font-size: 12px; line-height: 1.7; }
+.admin-page [hidden], .admin-login-page [hidden] { display: none; }
+@media (max-width: 640px) {
+  .admin-install-banner { gap: 11px; padding: 10px 12px; }
+  .admin-install-banner__icon { width: 40px; height: 40px; flex-basis: 40px; border-radius: 10px; }
+  .admin-install-banner__icon img { width: 34px; height: 34px; }
+  .admin-install-banner__copy strong { font-size: 12px; }
+  .admin-install-banner__copy > span { font-size: 11px; }
+  .admin-install-banner__install { padding: 8px 10px; min-height: 36px; }
+  .admin-install-banner__close { width: 27px; height: 30px; flex-basis: 27px; }
+  .admin-settings__card { flex-wrap: wrap; gap: 15px; padding: 20px; }
+  .admin-settings__details { flex-basis: calc(100% - 75px); }
+  .admin-settings__action { width: 100%; }
+}
+
+
+.admin-settings__actions { display: flex; flex-direction: column; flex: 0 0 160px; gap: 10px; }
+.admin-settings__test { min-height: 44px; padding: 11px 14px; border: 1px solid #b8c5b8; border-radius: 9px; background: #f4f7f1; color: #264932; font-size: 12px; font-weight: 800; transition: background-color .2s ease; }
+.admin-settings__test:hover:not(:disabled) { background: #e6f0e1; }
+.admin-settings__test:disabled { opacity: .55; cursor: not-allowed; }
+.admin-settings__details .admin-settings__test-note { margin-top: 13px; font-size: 12px; color: #778276; }
+.admin-settings__test-result { display: block; margin-top: 10px; font-size: 12px; font-weight: 700; color: #31593b; overflow-wrap: anywhere; }
+
+
+@media (max-width: 640px) {
+  .admin-settings__actions { flex: 1 1 100%; width: 100%; }
+  .admin-settings__test { width: 100%; }
+}
