@@ -180,6 +180,7 @@ const productSelect = {
       color: true,
       colorHex: true,
       thicknessMm: true,
+      fencePanelCount: true,
       price: true,
       sortOrder: true,
     },
@@ -248,6 +249,8 @@ function createVariantMarkup(product) {
       .filter((variant) => String(variant.color || '').trim())
       .map((variant) => [variant.color, variant]),
   ).values()];
+  const fence = /забор/i.test(product.category?.name || '');
+  const panels = [...new Map(product.variants.filter((v) => Number.isInteger(v.fencePanelCount) && v.fencePanelCount >= 1 && v.fencePanelCount <= 4).map((v) => [v.fencePanelCount, v])).values()].sort((a,b) => a.fencePanelCount - b.fencePanelCount);
   const thicknesses = [...new Map(
     product.variants
       .filter((variant) => Number.isFinite(Number(variant.thicknessMm)))
@@ -269,7 +272,12 @@ function createVariantMarkup(product) {
     groups.push(`<div class="product-info__variant-group"><p class="product-info__variants-label">Цвет</p><div class="product-info__variants-list">${buttons}</div></div>`);
   }
 
-  if (thicknesses.length) {
+  if (fence && panels.length) {
+    const buttons = panels.map((v, index) => `<button type="button" class="product-info__variant${index === 0 ? ' is-active' : ''}" data-option-panels="${v.fencePanelCount}">${v.fencePanelCount} ${v.fencePanelCount === 1 ? 'плита' : 'плиты'}</button>`).join('');
+    groups.push(`<div class="product-info__variant-group"><p class="product-info__variants-label">Количество плит</p><div class="product-info__variants-list">${buttons}</div></div>`);
+  }
+
+  if (!fence && thicknesses.length) {
     const buttons = thicknesses
       .map((variant, index) => {
         const thickness = escapeHtml(variant.thicknessMm);
@@ -283,12 +291,12 @@ function createVariantMarkup(product) {
 
   const combinationsCount = new Set(
     product.variants.map(
-      (variant) => `${variant.color || ''}\u0000${variant.thicknessMm ?? ''}`,
+      (variant) => `${variant.color || ''}\u0000${fence ? variant.fencePanelCount ?? '' : variant.thicknessMm ?? ''}`,
     ),
   ).size;
 
   if (
-    (!colors.length && !thicknesses.length) ||
+    (!colors.length && !(fence ? panels.length : thicknesses.length)) ||
     combinationsCount < product.variants.length
   ) {
     const buttons = product.variants
@@ -423,11 +431,16 @@ function renderProductPage(product, nonce) {
     'data-product-size',
     escapeHtml(product.dimensions || 'Уточняется'),
   );
+  if (/забор/i.test(product.category?.name || '')) {
+    html = html.replace(/(<div[^>]*data-product-thickness-row[^>]*>\s*<dt>)[^<]*(<\/dt>)/, '$1Количество плит$2');
+  }
   html = replaceElementContent(
     html,
     'dd',
     'data-product-thickness',
-    variant.thicknessMm ? `${escapeHtml(variant.thicknessMm)} мм` : 'Уточняется',
+    /забор/i.test(product.category?.name || '')
+      ? (variant.fencePanelCount ? `${variant.fencePanelCount} ${variant.fencePanelCount === 1 ? 'плита' : 'плиты'}` : 'Уточняется')
+      : (variant.thicknessMm ? `${escapeHtml(variant.thicknessMm)} мм` : 'Уточняется'),
   );
   html = replaceElementContent(
     html,

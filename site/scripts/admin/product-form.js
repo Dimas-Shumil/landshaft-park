@@ -228,6 +228,7 @@
     row.querySelector('[data-variant-price]').value = variant.price ?? '';
     row.querySelector('[data-variant-color]').value = variant.color ?? '';
     row.querySelector('[data-variant-thickness]').value = variant.thicknessMm ?? '';
+    row.querySelector('[data-variant-panel-count]').value = variant.fencePanelCount ?? '';
     row.querySelector('[data-variant-sort-order]').value = String(variant.sortOrder ?? 100);
     row.querySelector('[data-variant-active]').checked = variant.isActive ?? true;
     row.querySelector('[data-remove-variant]').addEventListener('click', () => {
@@ -240,6 +241,7 @@
     });
     variantList.append(fragment);
     updateVariantTitles();
+    updateCalculatorFields();
   }
 
   function renderVariants(variants) {
@@ -255,10 +257,20 @@
     return Number.isFinite(value) ? value : null;
   }
 
+  function isFenceCategory() {
+    const label = categoryInput?.selectedOptions?.[0]?.textContent || '';
+    return /забор/i.test(label);
+  }
+
   function updateCalculatorFields() {
     const type = String(calculatorTypeInput?.value || 'NONE');
     if (pavingCalculatorFields) pavingCalculatorFields.hidden = type !== 'PAVING';
     if (fenceCalculatorFields) fenceCalculatorFields.hidden = type !== 'FENCE';
+    const fenceCategory = isFenceCategory();
+    variantList.querySelectorAll('[data-variant-row]').forEach((row) => {
+      row.querySelector('[data-variant-panel-field]').hidden = !fenceCategory;
+      row.querySelector('[data-variant-thickness]').closest('label').hidden = fenceCategory;
+    });
   }
 
   function collectVariants() {
@@ -270,6 +282,9 @@
         sku: String(row.querySelector('[data-variant-sku]').value || '').trim() || null,
         color: String(row.querySelector('[data-variant-color]').value || '').trim(),
         thicknessMm: readNumber(row.querySelector('[data-variant-thickness]'), { nullable: true }),
+        fencePanelCount: isFenceCategory()
+          ? readNumber(row.querySelector('[data-variant-panel-count]'), { nullable: true })
+          : null,
         price: readNumber(row.querySelector('[data-variant-price]')),
         isActive: Boolean(row.querySelector('[data-variant-active]').checked),
         sortOrder: readNumber(row.querySelector('[data-variant-sort-order]')) ?? 100,
@@ -334,6 +349,9 @@
     for (const [index, variant] of payload.variants.entries()) {
       if (!variant.name || !Number.isInteger(variant.price) || variant.price < 0) {
         return `Проверьте название и цену варианта ${index + 1}.`;
+      }
+      if (variant.fencePanelCount !== null && (!Number.isInteger(variant.fencePanelCount) || variant.fencePanelCount < 1 || variant.fencePanelCount > 4)) {
+        return `Количество плит варианта ${index + 1} должно быть от 1 до 4.`;
       }
       if (variant.thicknessMm !== null && !Number.isInteger(variant.thicknessMm)) {
         return `Толщина варианта ${index + 1} должна быть целым числом.`;
@@ -750,6 +768,7 @@
     updateEditorIdentity();
   });
   calculatorTypeInput?.addEventListener('change', updateCalculatorFields);
+  categoryInput?.addEventListener('change', updateCalculatorFields);
 
   imageInput?.addEventListener('change', () => uploadFiles(imageInput.files || []));
   for (const type of ['dragenter', 'dragover']) {

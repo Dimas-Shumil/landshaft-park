@@ -137,6 +137,7 @@ const variantPayloadSchema = z
     sku: nullableSkuSchema.optional().default(null),
     color: variantColorSchema.optional().default(''),
     thicknessMm: nullableThicknessSchema.optional().default(null),
+    fencePanelCount: z.number().int().min(1).max(4).nullable().optional().default(null),
     price: z.number().int().min(0).max(MAX_PRICE),
     isActive: z.boolean().optional().default(true),
     sortOrder: z.number().int().min(0).max(1_000_000).optional().default(100),
@@ -207,6 +208,7 @@ const PRODUCT_FIELD_LABELS = {
   sku: 'SKU',
   color: 'цвет',
   thicknessMm: 'толщина',
+  fencePanelCount: 'количество плит',
   price: 'цена',
 };
 
@@ -473,6 +475,7 @@ function buildVariantData(variant) {
     color: variant.color,
     colorHex: VARIANT_COLOR_PALETTE[variant.color],
     thicknessMm: variant.thicknessMm,
+    fencePanelCount: variant.fencePanelCount,
     price: variant.price,
     isActive: variant.isActive,
     sortOrder: variant.sortOrder,

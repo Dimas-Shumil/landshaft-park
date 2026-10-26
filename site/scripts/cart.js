@@ -192,7 +192,7 @@
     return [
       item.variantName,
       item.color,
-      item.thickness ? `${item.thickness} мм` : '',
+      item.fencePanelCount ? `${item.fencePanelCount} ${item.fencePanelCount === 1 ? 'плита' : 'плиты'}` : (item.thickness ? `${item.thickness} мм` : ''),
     ]
       .map((value) => String(value || '').trim())
       .filter(Boolean)

@@ -269,6 +269,7 @@ function addPopularProductToCart(product, variant, button) {
       color: variant.color,
       colorHex: variant.colorHex,
       thickness: variant.thickness,
+      fencePanelCount: variant.fencePanelCount,
       image: product.image?.path || '',
       price: variant.price,
       unit: product.unit,
@@ -309,10 +310,9 @@ function createPopularProductCard(product) {
   const imagePath = escapeHtml(product.image?.path || '');
   const imageAlt = escapeHtml(product.image?.alt || product.name || 'Товар');
 
-  const thickness =
-    variant.thickness !== null && variant.thickness !== undefined
-      ? `${escapeHtml(variant.thickness)} мм`
-      : 'Толщина уточняется';
+  const thickness = /забор/i.test(product.category?.name || '')
+    ? (variant.fencePanelCount ? `${variant.fencePanelCount} ${variant.fencePanelCount === 1 ? 'плита' : 'плиты'}` : 'Количество плит уточняется')
+    : (variant.thickness != null ? `${escapeHtml(variant.thickness)} мм` : 'Толщина уточняется');
 
   const color = variant.color ? escapeHtml(variant.color) : '';
   const variantMeta = [thickness, color].filter(Boolean).join(' • ');

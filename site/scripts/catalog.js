@@ -22,6 +22,11 @@ const colorFilterSection = colorFiltersContainer?.closest('.catalog-filter');
 const thicknessFiltersContainer = document.querySelector(
   '[data-thickness-filters]',
 );
+const variantFilterTitle = document.querySelector('[data-variant-filter-title]');
+
+function isFenceCategory() {
+  return /забор/i.test(getActiveCategory());
+}
 
 const priceMinInput = document.querySelector('[data-price-min]');
 const priceMaxInput = document.querySelector('[data-price-max]');
@@ -134,6 +139,7 @@ function addToCart(productId, variantId, button) {
       color: variant.color,
       colorHex: variant.colorHex,
       thickness: variant.thickness,
+      fencePanelCount: variant.fencePanelCount,
 
       image: product.image?.path || '',
 
@@ -170,6 +176,10 @@ function getActiveCategory() {
   const input = filtersForm.querySelector('input[name="category"]:checked');
 
   return input ? input.value : '';
+}
+
+function isFenceProduct(product) {
+  return /забор/i.test(product?.category?.name || '');
 }
 
 function getCategoryVariants() {
@@ -216,7 +226,8 @@ function normalizePriceInputs(source) {
 function getMatchingVariants(product) {
   const colors = getSelectedValues('color');
 
-  const thicknesses = getSelectedValues('thickness').map(Number);
+  const fence = isFenceCategory();
+  const thicknesses = getSelectedValues(fence ? 'fencePanelCount' : 'thickness').map(Number);
 
   const minPrice = Number(priceMinInput.value) || Number(priceMinInput.min);
 
@@ -226,7 +237,7 @@ function getMatchingVariants(product) {
     const colorMatches = colors.length === 0 || colors.includes(variant.color);
 
     const thicknessMatches =
-      thicknesses.length === 0 || thicknesses.includes(variant.thickness);
+      thicknesses.length === 0 || thicknesses.includes(Number(fence ? variant.fencePanelCount : variant.thickness));
 
     const priceMatches =
       Number(variant.price) <= 0 ||
@@ -325,10 +336,9 @@ function createProductCard(product) {
 
   const color = variant.color ? escapeHtml(variant.color) : '';
 
-  const thickness =
-    variant.thickness !== null && variant.thickness !== undefined
-      ? `${escapeHtml(variant.thickness)} мм`
-      : 'Толщина уточняется';
+  const thickness = isFenceProduct(product)
+    ? (variant.fencePanelCount ? `${variant.fencePanelCount} ${variant.fencePanelCount === 1 ? 'плита' : 'плиты'}` : 'Количество плит уточняется')
+    : (variant.thickness != null ? `${escapeHtml(variant.thickness)} мм` : 'Толщина уточняется');
 
   const variantMeta = [thickness, color].filter(Boolean).join(' · ');
 
@@ -504,17 +514,25 @@ function renderColors() {
 
 function renderThicknesses() {
   if (!thicknessFiltersContainer) return;
-  const thicknesses = [...new Set(
+  const fence = isFenceCategory();
+  if (variantFilterTitle) variantFilterTitle.textContent = fence ? 'Количество плит' : 'Толщина, мм';
+  const values = [...new Set(
     getCategoryVariants()
-      .map((variant) => Number(variant.thickness))
-      .filter((value) => Number.isInteger(value) && value > 0),
+      .map((variant) => Number(fence ? variant.fencePanelCount : variant.thickness))
+      .filter((value) => Number.isInteger(value) && value > 0 && (!fence || value <= 4)),
   )].sort((a, b) => a - b);
 
   thicknessFiltersContainer.replaceChildren();
-  thicknesses.forEach((thickness) => {
+  values.forEach((value) => {
     const label = document.createElement('label');
     label.className = 'catalog-check';
-    label.innerHTML = `<input type="checkbox" name="thickness" value="${thickness}"><span>${thickness}</span>`;
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.name = fence ? 'fencePanelCount' : 'thickness';
+    input.value = String(value);
+    const span = document.createElement('span');
+    span.textContent = fence ? `${value} ${value === 1 ? 'плита' : value < 5 ? 'плиты' : 'плит'}` : String(value);
+    label.append(input, span);
     thicknessFiltersContainer.append(label);
   });
 }

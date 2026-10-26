@@ -168,6 +168,7 @@ model ProductVariant {
   color       String  @default("")
   colorHex    String?
   thicknessMm Int?
+  fencePanelCount Int?
 
   price Int
 
@@ -182,6 +183,7 @@ model ProductVariant {
   @@index([productId, isActive, sortOrder])
   @@index([color])
   @@index([thicknessMm])
+  @@index([fencePanelCount])
   @@index([price])
 }
 

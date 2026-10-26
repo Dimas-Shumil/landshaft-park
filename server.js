@@ -1689,6 +1689,7 @@ app.get('/api/catalog/products', async (req, res, next) => {
             color: true,
             colorHex: true,
             thicknessMm: true,
+            fencePanelCount: true,
             price: true,
 
             sortOrder: true,
@@ -1754,6 +1755,7 @@ app.get('/api/catalog/products', async (req, res, next) => {
             sku: variant.sku,
             ...publicColor,
             thickness: variant.thicknessMm,
+            fencePanelCount: variant.fencePanelCount,
             price: variant.price,
             order: variant.sortOrder,
           };
@@ -1860,6 +1862,7 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
             color: true,
             colorHex: true,
             thicknessMm: true,
+            fencePanelCount: true,
             price: true,
             sortOrder: true,
           },
@@ -1937,6 +1940,7 @@ app.get('/api/catalog/products/:slug', async (req, res, next) => {
             sku: variant.sku,
             ...publicColor,
             thickness: variant.thicknessMm,
+            fencePanelCount: variant.fencePanelCount,
             price: variant.price,
             order: variant.sortOrder,
           };
